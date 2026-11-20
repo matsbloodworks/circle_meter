@@ -27,7 +27,10 @@ constexpr int kAfrY        = 220;   // AFR 値（+10px下）
 constexpr int kSpeedLabelY = 300;   // Speed ラベル（+10px下）
 constexpr int kSpeedY      = 330;   // Speed 値（+10px下）
 
-constexpr int kRightLabelY = 50;    // 右側ラベル Y 開始
+constexpr int kEgtValueX   = 140;   // EGT値 X位置（左に20px）
+constexpr int kSpeedValueX = 170;   // SPD値 X位置（左に20px）
+
+constexpr int kRightLabelY = 70;    // 右側ラベル Y 開始（+20px下）
 constexpr int kRightStep   = 70;    // 右側データの Y 間隔
 
 constexpr int kAfrWidth    = 200;   // AFR の幅
@@ -61,9 +64,9 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     m_cltTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kEgtLabelY - 30);
     lv_label_set_text_static(m_cltTitle, "EGT");
 
-    // EGT値（AFRの右端に合わせる）
+    // EGT値（左に20px移動）
     m_egtNum.create(m_root, &cm_font_b612_egt, kDataWidth, kEgtY);
-    lv_obj_set_x(m_egtNum.obj(), 160);  // AFR・SPDの右端に合わせる
+    lv_obj_set_x(m_egtNum.obj(), kEgtValueX);  // 左に20px移動
 
     // AFRテキスト（右へシフト、下に移動）
     lv_obj_t* afrLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kAfrLabelY);
@@ -78,8 +81,8 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     m_speedTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kSpeedLabelY);
     lv_label_set_text_static(m_speedTitle, "SPD");
 
-    // SPD値（AFRの右端に合わせる）
-    m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, 190, kSpeedY);
+    // SPD値（左に20px移動）
+    m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kSpeedValueX, kSpeedY);
 
     // === 右側：CLT / MAT|MAP / OIL T|OIL P / ISCV / vBatt ===
     // CLT（中央揃え）
@@ -195,8 +198,8 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     std::snprintf(m_tpsBuf, sizeof(m_tpsBuf), "%.0f", v.tpsPercent);
     lv_label_set_text_static(m_tpsLabel, m_tpsBuf);
 
-    // vBatt表示
-    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.1f", v.battVolt);
+    // vBatt表示（整数のみ、小数点フォント未対応）
+    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.0f", v.battVolt);
     lv_label_set_text_static(m_vBattLabel, m_vBattBuf);
 }
 
