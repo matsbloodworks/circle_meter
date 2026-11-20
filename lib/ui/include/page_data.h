@@ -34,7 +34,7 @@ private:
     lv_obj_t* m_oilPressureLabel = nullptr;
     lv_obj_t* m_oilTempLabel = nullptr;
     lv_obj_t* m_iscvDutyLabel = nullptr;
-    lv_obj_t* m_battVoltLabel = nullptr;
+    lv_obj_t* m_vBattLabel = nullptr;
 
     lv_obj_t* m_speedTitle = nullptr;
     lv_obj_t* m_cltTitle = nullptr;
@@ -48,7 +48,7 @@ private:
     char m_oilPressureBuf[16]{};
     char m_oilTempBuf[16]{};
     char m_iscvDutyBuf[16]{};
-    char m_battVoltBuf[16]{};
+    char m_vBattBuf[16]{};
 
     lv_obj_t* m_diag = nullptr;
     DisplayFilter m_filter;

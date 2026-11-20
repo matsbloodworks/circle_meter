@@ -39,7 +39,7 @@ struct DisplayValues {
     float oilPressure = 0.0f;  ///< オイル圧力
     float oilTempC    = 0.0f;  ///< オイル温度
     float iscvDuty    = 0.0f;  ///< ISCV duty cycle (%)
-    float battVoltage = 0.0f;  ///< バッテリー電圧
+    float battVolt    = 0.0f;  ///< バッテリー電圧
     // Speed
     float speedKmh    = 0.0f;  ///< 速度
 };
@@ -106,7 +106,7 @@ public:
         snap.get(SignalId::OilPressure, v.oilPressure);
         snap.get(SignalId::OilTemp, v.oilTempC);
         snap.get(SignalId::IdlePosition, v.iscvDuty);  // ISCV duty = Idle Position
-        snap.get(SignalId::BattVolt, v.battVoltage);
+        snap.get(SignalId::BattVolt, v.battVolt);
 
         return v;
     }
