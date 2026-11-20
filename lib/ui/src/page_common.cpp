@@ -29,6 +29,20 @@ uint32_t mainColorHex(const DisplayValues& v) {
     return color::kText;
 }
 
+uint32_t afrColorHex(const DisplayValues& v, const Config& cfg) {
+    if (!v.hasLambda || v.lambdaStale) {
+        return color::kDisabled;
+    }
+    float afr = lambdaToAfr(v.lambda, cfg.stoich);
+    if (afr >= 14.5f) {
+        return 0xFF3333;  // 赤
+    }
+    if (afr >= 13.0f) {
+        return 0xFFDD00;  // 黄色
+    }
+    return color::kText;  // 白
+}
+
 void formatEgt(char* buf, size_t size, const DisplayValues& v) {
     if (v.hasEgt) {
         std::snprintf(buf, size, "%d" CM_DEG "C", static_cast<int>(v.egtC + 0.5f));
@@ -64,6 +78,46 @@ uint32_t sensorStatusColorHex(const LambdaSensorInfo& info) {
 
 bool egtAlarmOn(const DisplayValues& v, bool blinkOn) {
     return v.hasEgt && !v.egtStale && v.egtLevel == EgtLevel::Danger && blinkOn;
+}
+
+uint32_t spdColorHex(const DisplayValues& v) {
+    if (v.speedKmh >= 120.0f) {
+        return 0xFF3333;  // 赤
+    }
+    if (v.speedKmh >= 80.0f) {
+        return 0xFFDD00;  // 黄色
+    }
+    return color::kText;  // 白
+}
+
+uint32_t cltColorHex(const DisplayValues& v) {
+    if (v.cltC >= 100.0f) {
+        return 0xFF3333;  // 赤
+    }
+    if (v.cltC <= 60.0f) {
+        return 0x33BBFF;  // 青
+    }
+    return color::kText;  // 白
+}
+
+uint32_t vbColorHex(const DisplayValues& v) {
+    if (v.battVolt <= 11.5f) {
+        return 0xFF3333;  // 赤
+    }
+    if (v.battVolt <= 12.0f) {
+        return 0xFFDD00;  // 黄色
+    }
+    return color::kText;  // 白
+}
+
+uint32_t oilTempColorHex(const DisplayValues& v) {
+    if (v.oilTempC >= 115.0f) {
+        return 0xFF3333;  // 赤
+    }
+    if (v.oilTempC >= 105.0f) {
+        return 0xFFDD00;  // 黄色
+    }
+    return color::kText;  // 白
 }
 
 }  // namespace cm::ui

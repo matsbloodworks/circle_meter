@@ -27,8 +27,8 @@ constexpr int kAfrY        = 220;   // AFR 値（+10px下）
 constexpr int kSpeedLabelY = 300;   // Speed ラベル（+10px下）
 constexpr int kSpeedY      = 330;   // Speed 値（+10px下）
 
-constexpr int kEgtValueX   = 140;   // EGT値 X位置（左に20px）
-constexpr int kSpeedValueX = 170;   // SPD値 X位置（左に20px）
+constexpr int kEgtValueX   = 110;   // EGT値 X位置（左に50px）
+constexpr int kSpeedValueX = 140;   // SPD値 X位置（左に50px）
 
 constexpr int kRightLabelY = 70;    // 右側ラベル Y 開始（+20px下）
 constexpr int kRightStep   = 70;    // 右側データの Y 間隔
@@ -160,7 +160,7 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
 
     // AFR表示（DSEG7）
     formatMain(buf, sizeof(buf), v, cfg);
-    m_afrNum.setText(buf, mainColorHex(v));
+    m_afrNum.setText(buf, afrColorHex(v, cfg));
 
     // EGT表示
     std::snprintf(buf, sizeof(buf), "%.0f", v.egtC);
@@ -169,10 +169,12 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     // Speed表示
     std::snprintf(m_speedBuf, sizeof(m_speedBuf), "%.0f", v.speedKmh);
     lv_label_set_text_static(m_speedLabel, m_speedBuf);
+    lv_obj_set_style_text_color(m_speedLabel, lv_color_hex(spdColorHex(v)), 0);
 
     // CLT表示
     std::snprintf(m_cltBuf, sizeof(m_cltBuf), "%.0f", v.cltC);
     lv_label_set_text_static(m_cltLabel, m_cltBuf);
+    lv_obj_set_style_text_color(m_cltLabel, lv_color_hex(cltColorHex(v)), 0);
 
     // MAT表示
     std::snprintf(m_matBuf, sizeof(m_matBuf), "%.0f", v.matC);
@@ -189,6 +191,7 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     // Oil Temp表示
     std::snprintf(m_oilTempBuf, sizeof(m_oilTempBuf), "%.0f", v.oilTempC);
     lv_label_set_text_static(m_oilTempLabel, m_oilTempBuf);
+    lv_obj_set_style_text_color(m_oilTempLabel, lv_color_hex(oilTempColorHex(v)), 0);
 
     // ISCV Duty表示
     std::snprintf(m_iscvDutyBuf, sizeof(m_iscvDutyBuf), "%.0f", v.iscvDuty);
@@ -201,6 +204,7 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     // vBatt表示（整数のみ、小数点フォント未対応）
     std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.0f", v.battVolt);
     lv_label_set_text_static(m_vBattLabel, m_vBattBuf);
+    lv_obj_set_style_text_color(m_vBattLabel, lv_color_hex(vbColorHex(v)), 0);
 }
 
 }  // namespace cm::ui
