@@ -54,21 +54,29 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     lv_obj_remove_flag(m_root, static_cast<lv_obj_flag_t>(LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE));
 
     // === 左側：EGT、AFR（DSEG7 大型）、Speed（上から順に） ===
-    m_cltTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kEgtLabelY - 30);
+    // テキストラベル（右へシフト）
+    m_cltTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kEgtLabelY - 30);
     lv_label_set_text_static(m_cltTitle, "EGT");
 
+    // EGT値（左へシフト）
     m_egtNum.create(m_root, &cm_font_b612_egt, kDataWidth, kEgtY);
+    lv_obj_set_x(m_egtNum.obj(), 20);  // 左へ移動
 
-    lv_obj_t* afrLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kAfrY - 50);
+    // AFRテキスト（右へシフト）
+    lv_obj_t* afrLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kAfrY - 50);
     lv_label_set_text_static(afrLabel, "AFR");
 
+    // AFR値（左へシフト、EGT値と同じX位置）
     m_afrNum.create(m_root, &cm_font_dseg7_afr, kAfrWidth, kAfrY);
     m_afrNum.setCellScale('.', 0.6f);  // 小数点を見やすく
+    lv_obj_set_x(m_afrNum.obj(), 20);  // 左へ移動
 
-    m_speedTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kSpeedLabelY);
+    // SPDテキスト（右へシフト）
+    m_speedTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kSpeedLabelY);
     lv_label_set_text_static(m_speedTitle, "SPD");
 
-    m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kLeftX, kSpeedY);
+    // SPD値（EGT/AFR値と同じX位置）
+    m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, 20, kSpeedY);
 
     // === 右側：CLT、MAT、MAP、Oil P、Oil T、ISCV duty（垂直配置） ===
     lv_obj_t* cltTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY);
