@@ -57,7 +57,7 @@ uint32_t egtColorHex(const DisplayValues& v, bool blinkOn) {
     }
     // 温度値ベースの色変化: 500以上で赤、400以上で黄色
     if (v.egtC >= 500.0f) {
-        return blinkOn ? 0xFF5555 : 0x552222;  // 赤（点滅）
+        return blinkOn ? 0xFF3333 : 0x552222;  // 赤（点滅）
     }
     if (v.egtC >= 400.0f) {
         return 0xFFDD00;  // 黄色

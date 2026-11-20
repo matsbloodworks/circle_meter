@@ -20,10 +20,10 @@ constexpr int kRightX = 310;   // 右側中央 X（さらに左へ）
 constexpr int kRightLeftX = 270;   // 右側・左列 X（MAT、OIL T、ISCV用）
 constexpr int kRightRightX = 350;  // 右側・右列 X（MAP、OIL P、TPS用）
 
-constexpr int kEgtLabelY   = 120;   // EGT ラベル（+20px下）
-constexpr int kEgtY        = 150;   // EGT 値
-constexpr int kAfrLabelY   = 170;   // AFR ラベル（+10px下）
-constexpr int kAfrY        = 220;   // AFR 値（+10px下）
+constexpr int kEgtLabelY   = 140;   // EGT ラベル（+40px下）
+constexpr int kEgtY        = 170;   // EGT 値
+constexpr int kAfrLabelY   = 190;   // AFR ラベル（+30px下）
+constexpr int kAfrY        = 240;   // AFR 値（+30px下）
 constexpr int kSpeedLabelY = 300;   // Speed ラベル（+10px下）
 constexpr int kSpeedY      = 330;   // Speed 値（+10px下）
 
@@ -201,8 +201,8 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     std::snprintf(m_tpsBuf, sizeof(m_tpsBuf), "%.0f", v.tpsPercent);
     lv_label_set_text_static(m_tpsLabel, m_tpsBuf);
 
-    // vBatt表示（整数のみ、小数点フォント未対応）
-    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.0f", v.battVolt);
+    // vBatt表示（小数点第1位を表示）
+    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.1f", v.battVolt);
     lv_label_set_text_static(m_vBattLabel, m_vBattBuf);
     lv_obj_set_style_text_color(m_vBattLabel, lv_color_hex(vbColorHex(v)), 0);
 }

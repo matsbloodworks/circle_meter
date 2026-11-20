@@ -130,7 +130,7 @@ void simTask(void*) {
         g_store.update(SignalId::VehicleSpeed, o.vss, now);
         // 右列のデモ値を時間に応じて変動させる
         const float phase = (now % 10000) / 10000.0f * 6.28f;  // 10秒周期
-        g_store.update(SignalId::Clt, 60.0f + 60.0f * (0.5f + 0.5f * sinf(phase)), now);  // 0-120℃
+        g_store.update(SignalId::Clt, 0.0f + 120.0f * (0.5f + 0.5f * sinf(phase)), now);  // 0-120℃
         g_store.update(SignalId::Iat, 20.0f + 15.0f * (0.5f + 0.5f * sinf(phase + 1.0f)), now);  // MAT
         g_store.update(SignalId::Map, 40.0f + 20.0f * (0.5f + 0.5f * sinf(phase + 2.0f)), now);
         g_store.update(SignalId::OilPressure, 2.0f + 2.0f * (0.5f + 0.5f * sinf(phase + 3.0f)), now);
