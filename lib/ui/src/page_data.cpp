@@ -76,8 +76,8 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     m_speedTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kSpeedLabelY);
     lv_label_set_text_static(m_speedTitle, "SPD");
 
-    // SPD値（EGT/AFR値と同じX位置）
-    m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, 20, kSpeedY);
+    // SPD値（AFRの右端に合わせる）
+    m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, 190, kSpeedY);
 
     // === 右側：CLT、MAT、MAP、Oil P、Oil T、ISCV duty（垂直配置） ===
     lv_obj_t* cltTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY);
