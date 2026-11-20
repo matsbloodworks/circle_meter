@@ -29,6 +29,11 @@ private:
     lv_obj_t* m_speedLabel = nullptr;
     lv_obj_t* m_cltLabel = nullptr;
     lv_obj_t* m_iatLabel = nullptr;
+    lv_obj_t* m_matLabel = nullptr;
+    lv_obj_t* m_mapLabel = nullptr;
+    lv_obj_t* m_oilPressureLabel = nullptr;
+    lv_obj_t* m_oilTempLabel = nullptr;
+    lv_obj_t* m_iscvDutyLabel = nullptr;
 
     lv_obj_t* m_speedTitle = nullptr;
     lv_obj_t* m_cltTitle = nullptr;
@@ -37,6 +42,11 @@ private:
     char m_speedBuf[16]{};
     char m_cltBuf[16]{};
     char m_iatBuf[16]{};
+    char m_matBuf[16]{};
+    char m_mapBuf[16]{};
+    char m_oilPressureBuf[16]{};
+    char m_oilTempBuf[16]{};
+    char m_iscvDutyBuf[16]{};
 
     lv_obj_t* m_diag = nullptr;
     DisplayFilter m_filter;

@@ -12,28 +12,33 @@ namespace cm::ui {
 
 namespace {
 
-// レイアウト
-constexpr int kEgtY    = 120;  // EGT表示（上部）
-constexpr int kAfrY    = 220;  // AFR表示（中央）
-constexpr int kDataY   = 380;  // Speed/CLT/IAT表示（下部）
+// 左右 2 分割レイアウト（480x480）
+// 左側：AFR（DSEG7 大型）、EGT、Speed
+// 右側：CLT、MAT、MAP、Oil P、Oil T、ISCV duty（垂直配置）
+constexpr int kLeftX  = 120;   // 左側中央 X
+constexpr int kRightX = 360;   // 右側中央 X
 
-constexpr int kEgtWidth   = 60;
-constexpr int kAfrWidth   = 320;  // C面と同じサイズ
-constexpr int kDataWidth  = 60;
+constexpr int kAfrY        = 100;   // AFR（大きく）
+constexpr int kEgtLabelY   = 200;   // EGT ラベル
+constexpr int kEgtY        = 230;   // EGT 値
+constexpr int kSpeedLabelY = 310;   // Speed ラベル
+constexpr int kSpeedY      = 340;   // Speed 値
 
-// 下部 3 つのデータ配置（横に並べる）: CLT / Speed / IAT
-constexpr int kCltX   = 120;
-constexpr int kSpeedX = 240;
-constexpr int kIatX   = 360;
+constexpr int kRightLabelY = 50;    // 右側ラベル Y 開始
+constexpr int kRightStep   = 70;    // 右側データの Y 間隔
 
-lv_obj_t* makeLabel(lv_obj_t* parent, const lv_font_t* font, uint32_t hex, int width, int centerY) {
+constexpr int kAfrWidth    = 200;   // AFR の幅
+constexpr int kDataWidth   = 60;    // 右側データの幅
+constexpr int kLabelWidth  = 70;    // 右側ラベルの幅
+
+lv_obj_t* makeLabel(lv_obj_t* parent, const lv_font_t* font, uint32_t hex, int width, int centerX, int centerY) {
     lv_obj_t* l = lv_label_create(parent);
     lv_obj_set_style_text_font(l, font, 0);
     lv_obj_set_style_text_color(l, lv_color_hex(hex), 0);
     lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
     lv_label_set_long_mode(l, LV_LABEL_LONG_CLIP);
     lv_obj_set_width(l, width);
-    lv_obj_set_pos(l, layout::kCx - width / 2, centerY - lv_font_get_line_height(font) / 2);
+    lv_obj_set_pos(l, centerX - width / 2, centerY - lv_font_get_line_height(font) / 2);
     return l;
 }
 
@@ -48,42 +53,55 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     lv_obj_set_style_bg_opa(m_root, LV_OPA_COVER, 0);
     lv_obj_remove_flag(m_root, static_cast<lv_obj_flag_t>(LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE));
 
-    // EGT/AFR テキストラベル
-    lv_obj_t* egtLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, 80, kEgtY - 20);
-    lv_label_set_text_static(egtLabel, "EGT");
-
-    lv_obj_t* afrLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, 80, kAfrY - 20);
+    // === 左側：AFR（DSEG7 大型）+ EGT + Speed ===
+    lv_obj_t* afrLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kAfrY - 50);
     lv_label_set_text_static(afrLabel, "AFR");
 
-    // 数値表示
-    m_egtNum.create(m_root, &cm_font_b612_egt, kEgtWidth, kEgtY);
     m_afrNum.create(m_root, &cm_font_dseg7_afr, kAfrWidth, kAfrY);
     m_afrNum.setCellScale('.', 0.6f);  // 小数点を見やすく
 
-    // 下部テキストラベル（CLT / SPEED / IAT）
-    m_speedTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, 60, kDataY - 30);
-    lv_obj_set_x(m_speedTitle, kSpeedX - 25);
-    lv_label_set_text_static(m_speedTitle, "SPEED");
+    m_cltTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kEgtLabelY);
+    lv_label_set_text_static(m_cltTitle, "EGT");
 
-    m_cltTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, 60, kDataY - 30);
-    lv_obj_set_x(m_cltTitle, kCltX - 30);
-    lv_label_set_text_static(m_cltTitle, "CLT");
+    m_egtNum.create(m_root, &cm_font_b612_egt, kDataWidth, kEgtY);
 
-    m_iatTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, 60, kDataY - 30);
-    lv_obj_set_x(m_iatTitle, kIatX - 30);
-    lv_label_set_text_static(m_iatTitle, "IAT");
+    m_speedTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kSpeedLabelY);
+    lv_label_set_text_static(m_speedTitle, "Speed");
 
-    // 下部 3 つの数値ラベル（横に並べる）: CLT / Speed / IAT
-    m_cltLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kDataY);
-    lv_obj_set_x(m_cltLabel, kCltX - kDataWidth / 2);
+    m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kLeftX, kSpeedY);
 
-    m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kDataY);
-    lv_obj_set_x(m_speedLabel, kSpeedX - kDataWidth / 2);
+    // === 右側：CLT、MAT、MAP、Oil P、Oil T、ISCV duty（垂直配置） ===
+    lv_obj_t* cltTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY);
+    lv_label_set_text_static(cltTitleLabel, "CLT");
 
-    m_iatLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kDataY);
-    lv_obj_set_x(m_iatLabel, kIatX - kDataWidth / 2);
+    m_cltLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + 25);
 
-    m_diag = makeLabel(m_root, &cm_font_b612_small, color::kDialDiag, 200, 450);
+    lv_obj_t* matTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep);
+    lv_label_set_text_static(matTitleLabel, "MAT");
+
+    m_matLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep + 25);
+
+    lv_obj_t* mapTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 2);
+    lv_label_set_text_static(mapTitleLabel, "MAP");
+
+    m_mapLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 2 + 25);
+
+    lv_obj_t* oilPTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 3);
+    lv_label_set_text_static(oilPTitleLabel, "Oil P");
+
+    m_oilPressureLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 3 + 25);
+
+    lv_obj_t* oilTTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 4);
+    lv_label_set_text_static(oilTTitleLabel, "Oil T");
+
+    m_oilTempLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 4 + 25);
+
+    lv_obj_t* iscvTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 5);
+    lv_label_set_text_static(iscvTitleLabel, "ISCV");
+
+    m_iscvDutyLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 5 + 25);
+
+    m_diag = makeLabel(m_root, &cm_font_b612_small, color::kDialDiag, 200, layout::kCx, 450);
     lv_label_set_text_static(m_diag, m_lastDiag);
 }
 
@@ -111,23 +129,41 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     const DisplayValues v = m_filter.update(snap, cfg);
     char buf[16];
 
+    // AFR表示（DSEG7）
+    formatMain(buf, sizeof(buf), v, cfg);
+    m_afrNum.setText(buf, mainColorHex(v));
+
     // EGT表示
     std::snprintf(buf, sizeof(buf), "%.0f", v.egtC);
     m_egtNum.setText(buf, egtColorHex(v, false));
 
-    // AFR表示
-    formatMain(buf, sizeof(buf), v, cfg);
-    m_afrNum.setText(buf, mainColorHex(v));
-
-    // Speed/CLT/IAT表示（専用バッファに出力）
+    // Speed表示
     std::snprintf(m_speedBuf, sizeof(m_speedBuf), "%.0f", v.speedKmh);
     lv_label_set_text_static(m_speedLabel, m_speedBuf);
 
+    // CLT表示
     std::snprintf(m_cltBuf, sizeof(m_cltBuf), "%.0f", v.cltC);
     lv_label_set_text_static(m_cltLabel, m_cltBuf);
 
-    std::snprintf(m_iatBuf, sizeof(m_iatBuf), "%.0f", v.iatC);
-    lv_label_set_text_static(m_iatLabel, m_iatBuf);
+    // MAT表示
+    std::snprintf(m_matBuf, sizeof(m_matBuf), "%.0f", v.matC);
+    lv_label_set_text_static(m_matLabel, m_matBuf);
+
+    // MAP表示
+    std::snprintf(m_mapBuf, sizeof(m_mapBuf), "%.0f", v.mapKpa);
+    lv_label_set_text_static(m_mapLabel, m_mapBuf);
+
+    // Oil Pressure表示
+    std::snprintf(m_oilPressureBuf, sizeof(m_oilPressureBuf), "%.0f", v.oilPressure);
+    lv_label_set_text_static(m_oilPressureLabel, m_oilPressureBuf);
+
+    // Oil Temp表示
+    std::snprintf(m_oilTempBuf, sizeof(m_oilTempBuf), "%.0f", v.oilTempC);
+    lv_label_set_text_static(m_oilTempLabel, m_oilTempBuf);
+
+    // ISCV Duty表示
+    std::snprintf(m_iscvDutyBuf, sizeof(m_iscvDutyBuf), "%.0f", v.iscvDuty);
+    lv_label_set_text_static(m_iscvDutyLabel, m_iscvDutyBuf);
 }
 
 }  // namespace cm::ui

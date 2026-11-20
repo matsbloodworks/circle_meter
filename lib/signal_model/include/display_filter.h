@@ -33,6 +33,12 @@ struct DisplayValues {
     // CLT / IAT
     float cltC        = 0.0f;  ///< クーラント温度
     float iatC        = 0.0f;  ///< 吸気温度
+    // Additional sensors
+    float matC        = 0.0f;  ///< 吸気温度（Manifold Air Temperature）
+    float mapKpa      = 0.0f;  ///< 絶対圧力（Manifold Absolute Pressure）
+    float oilPressure = 0.0f;  ///< オイル圧力
+    float oilTempC    = 0.0f;  ///< オイル温度
+    float iscvDuty    = 0.0f;  ///< ISCV duty cycle (%)
     // Speed
     float speedKmh    = 0.0f;  ///< 速度
 };
@@ -94,6 +100,11 @@ public:
         snap.get(SignalId::Clt, v.cltC);
         snap.get(SignalId::Iat, v.iatC);
         snap.get(SignalId::VehicleSpeed, v.speedKmh);
+        snap.get(SignalId::Iat, v.matC);  // MAT は IAT と同じ値を使用
+        snap.get(SignalId::Map, v.mapKpa);
+        snap.get(SignalId::OilPressure, v.oilPressure);
+        snap.get(SignalId::OilTemp, v.oilTempC);
+        snap.get(SignalId::IdlePosition, v.iscvDuty);  // ISCV duty = Idle Position
 
         return v;
     }
