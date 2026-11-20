@@ -21,7 +21,7 @@ constexpr int kRightLeftX = 270;   // 右側・左列 X（MAT、OIL T、ISCV用�
 constexpr int kRightRightX = 350;  // 右側・右列 X（MAP、OIL P、TPS用）
 
 constexpr int kEgtLabelY   = 100;   // EGT ラベル（上）
-constexpr int kEgtY        = 130;   // EGT 値
+constexpr int kEgtY        = 120;   // EGT 値（-10px上）
 constexpr int kAfrLabelY   = 170;   // AFR ラベル（+10px下）
 constexpr int kAfrY        = 220;   // AFR 値（+10px下）
 constexpr int kSpeedLabelY = 300;   // Speed ラベル（+10px下）
@@ -123,7 +123,7 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
 
     // vBatt（中央揃え）
     lv_obj_t* vBattTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 4);
-    lv_label_set_text_static(vBattTitleLabel, "vBatt");
+    lv_label_set_text_static(vBattTitleLabel, "VB");
 
     m_vBattLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 4 + 25);
 
@@ -195,8 +195,8 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     std::snprintf(m_tpsBuf, sizeof(m_tpsBuf), "%.0f", v.tpsPercent);
     lv_label_set_text_static(m_tpsLabel, m_tpsBuf);
 
-    // vBatt表示（整数部のみ）
-    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.0f", v.battVolt);
+    // vBatt表示
+    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.1f", v.battVolt);
     lv_label_set_text_static(m_vBattLabel, m_vBattBuf);
 }
 
