@@ -59,9 +59,9 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     m_cltTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kEgtLabelY - 30);
     lv_label_set_text_static(m_cltTitle, "EGT");
 
-    // EGT値（左へシフト）
+    // EGT値（AFRの右端に合わせる）
     m_egtNum.create(m_root, &cm_font_b612_egt, kDataWidth, kEgtY);
-    lv_obj_set_x(m_egtNum.obj(), 20);  // 左へ移動
+    lv_obj_set_x(m_egtNum.obj(), 160);  // AFR・SPDの右端に合わせる
 
     // AFRテキスト（右へシフト、下に移動）
     lv_obj_t* afrLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kAfrLabelY);
