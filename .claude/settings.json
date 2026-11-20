@@ -23,9 +23,14 @@
       "PowerShell(./tools/monitor.ps1:*)",
       "PowerShell(./tools/flash_and_monitor.ps1:*)",
       "Bash(clang-format:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
+      "Bash(git *)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
       "Bash(python tools/pcan_send.py:*)",
       "Bash(python tools/make_logo.py:*)",
       "Bash(tools/can_send.ps1:*)",
@@ -47,7 +52,10 @@
       "PowerShell(git rev-parse:*)",
       "PowerShell(git branch --show-current)",
       "PowerShell(git --version)",
-      "PowerShell(python --version)"
+      "PowerShell(python --version)",
+      "Edit(.claude/**)",
+      "Write(.claude/**)",
+      "PowerShell(*)"
     ],
     "deny": []
   }

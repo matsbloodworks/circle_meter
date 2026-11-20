@@ -25,7 +25,7 @@ constexpr int kAlarmBand  = 5;    ///< DANGER 時に外周を赤く塗る帯の�
 constexpr int kTickInner  = 180;  ///< ゾーン境界マークの内側
 constexpr int kScaleInner = 184;  ///< 目盛の内側
 
-constexpr int kRingStartDeg = 135;  ///< 7 時半方向。角度は LVGL 準拠（0° = 3 時、時計回り）
+constexpr int kRingStartDeg = 90;  ///< 6 時方向（真下）。角度は LVGL 準拠（0° = 3 時、90° = 6 時、時計回り）
 constexpr int kRingSweepDeg = 270;
 
 // 縦方向のバンド（垂直中心）

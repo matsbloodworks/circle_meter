@@ -51,10 +51,11 @@ void PageNeedle::onCreate(lv_obj_t* parent, const Config& cfg) {
     // Z 順: 文字盤 -> 針 -> 数値（針は中心から浮かせてあり、数値とは重ならない）
     m_face.create(m_root, cfg);
     m_needle.create(m_root);
-    m_mainNum.create(m_root, &cm_font_b612_main, kMainWidth, kMainY);
+    m_mainNum.create(m_root, &cm_font_dseg7_afr, kMainWidth, kMainY);
     m_mainNum.setCellScale('.', kDotScale);
     m_egtNum.create(m_root, &cm_font_b612_egt, kEgtWidth, kEgtY);
     m_egtNum.setCellScale(0xB0, kDegScale);  // '°'
+    m_speedNum.create(m_root, &cm_font_b612_egt, kEgtWidth, kEgtY + 50);
 
     m_status = makeLabel(m_root, &cm_font_b612_label, color::kDanger, 300, kStatusY);
     m_diag   = makeLabel(m_root, &cm_font_b612_small, color::kDialDiag, 200, kDiagY);
@@ -95,6 +96,16 @@ void PageNeedle::onUpdate(const Snapshot& snap, const Config& cfg) {
     m_mainNum.setText(buf, mainColorHex(v));
     formatEgt(buf, sizeof(buf), v);
     m_egtNum.setText(buf, egtColorHex(v, blinkOn));
+
+    // Speed display
+    float speed = 0.0f;
+    if (snap.get(SignalId::VehicleSpeed, speed)) {
+        std::snprintf(buf, sizeof(buf), "%.0f", speed);
+    } else {
+        std::snprintf(buf, sizeof(buf), "--");
+    }
+    m_speedNum.setText(buf, color::kText);
+
     m_face.setAlarm(egtAlarmOn(v, blinkOn));
 
     // SWR-51: λ が無効ならその理由（NO SIGNAL / 停止中 / 加熱中 / 故障）

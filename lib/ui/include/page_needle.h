@@ -27,6 +27,7 @@ private:
     Needle m_needle;
     BigNumber m_mainNum;
     BigNumber m_egtNum;
+    BigNumber m_speedNum;
     lv_obj_t* m_status = nullptr;  // NO SIGNAL
     lv_obj_t* m_diag   = nullptr;  // デモの fps など
     DisplayFilter m_filter;

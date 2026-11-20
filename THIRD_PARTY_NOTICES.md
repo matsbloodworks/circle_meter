@@ -9,6 +9,8 @@ circle_meter 自体（このリポジトリのコード・ツール・文書・�
 |---|---|---|---|
 | B612 Mono（フォント） | `assets/fonts/B612Mono-*.ttf` と、それを変換した `assets/lcd21/fonts/cm_font_b612_*.c` | SIL Open Font License 1.1（Copyright 2012 The B612 Project Authors） | [assets/fonts/B612-OFL.txt](assets/fonts/B612-OFL.txt) |
 | Montserrat（フォント） | `assets/fonts/Montserrat-Bold.ttf` と、それを変換した `assets/lcd21/fonts/cm_font_{afr,egt,lambda}.c` | SIL Open Font License 1.1（Copyright 2011 The Montserrat Project Authors） | [assets/fonts/Montserrat-OFL.txt](assets/fonts/Montserrat-OFL.txt) |
+| DSEG7 Classic（フォント） | `assets/fonts/DSEG7Classic-Bold.ttf` と、それを変換した `assets/m5dial/fonts/cm_vlw_fonts.cpp` の `cm_vlw_value` | SIL Open Font License 1.1（Copyright (c) 2017, keshikan） | [assets/fonts/DSEG-OFL.txt](assets/fonts/DSEG-OFL.txt) |
+| Orbitron（フォント） | `assets/fonts/Orbitron-Variable.ttf` と、それを変換した `assets/m5dial/fonts/cm_vlw_fonts.cpp` の `cm_vlw_label` / `cm_vlw_title` | SIL Open Font License 1.1（Copyright 2018 The Orbitron Project Authors） | [assets/fonts/Orbitron-OFL.txt](assets/fonts/Orbitron-OFL.txt) |
 
 OFL のフォントは、単体で販売しない限りソフトウェアに同梱して配布できます。フォントとその変換物は OFL のままです。
 

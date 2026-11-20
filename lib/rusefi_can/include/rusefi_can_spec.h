@@ -25,15 +25,43 @@ enum FrameOffset : uint8_t {
     kOffPedalTps = 2,   // BASE+2  ペダル・スロットル
     kOffSensors1 = 3,   // BASE+3  MAP・水温・吸気温・燃料残量
     kOffSensors2 = 4,   // BASE+4  油圧・油温・燃温・バッテリ電圧
-    kOffFueling  = 5,   // BASE+5  （未使用）
+    kOffFueling  = 5,   // BASE+5  噴射パルス幅（ほかの項目は未使用）
     kOffFueling2 = 6,   // BASE+6  （未使用）
     kOffFueling3 = 7,   // BASE+7  ★ラムダ
     kOffCams     = 8,   // BASE+8  （未使用）
     kOffEgts     = 9,   // BASE+9  ★排気温度
     kOffKnock    = 10,  // BASE+10 （未使用）
     kOffStatus11 = 11,  // BASE+11 （未使用）
-    kOffCount    = 12
+    // BASE+12 は rusEFI 本体が送らない ID。ECU の Lua スクリプト（user/ecu_lua/meter_extra.lua）が
+    // 追加データを送るのに使う。受信フィルタは BASE+0..BASE+15 を通すので、ドライバの変更は要らない。
+    kOffUserExtra  = 12,  // BASE+12 ★燃費・ISCV・大気圧・dwell
+    kOffUserExtra2 = 13,  // BASE+13 ★噴射タイミング（BASE+12 に入りきらない分）
+    kOffCount      = 14
 };
+
+// ---------------------------------------------------------------- BASE+13 追加データ 2（Lua が送る）
+//   byte0-1  噴射タイミング  int16 LE, 0.1 deg/LSB
+//   byte2-6  予備（0）
+//   byte7    識別子 kUserExtra2Magic
+constexpr uint8_t kUserExtra2Magic  = 0xC2;
+constexpr float kInjTimingScaleDeg  = 0.1f;
+
+// ---------------------------------------------------------------- BASE+12 追加データ（Lua が送る）
+//   byte0-1  瞬間燃費  uint16 LE, 0.1 km/L/LSB
+//   byte2-3  平均燃費  uint16 LE, 0.1 km/L/LSB
+//   byte4    ISCV デューティ  uint8, 0.5 %/LSB
+//   byte5    大気圧    uint8, 0.5 kPa/LSB
+//   byte6    dwell     uint8, 0.05 ms/LSB
+//   byte7    識別子 kUserExtraMagic（別の機器が同じ ID を使っていたら読まない）
+// Lua 側と必ず同じ値にすること。
+constexpr uint8_t kUserExtraMagic      = 0xC1;
+constexpr uint8_t kUserExtraOffMagic   = 7;
+constexpr float kFuelEcoScaleKml       = 0.1f;
+constexpr float kIdlePosScalePct       = 0.5f;
+constexpr float kBaroScaleKpa          = 0.5f;
+constexpr float kDwellScaleMs          = 0.05f;
+/// 大気圧として表示できる下限。Lua がセンサを読めないときに送る 0 を捨てる
+constexpr float kBaroMinValidKpa       = 50.0f;
 
 /// 全フレーム共通の DLC。これ未満は不正フレームとして破棄する（SWR-06）。
 constexpr uint8_t kFrameDlc = 8;
@@ -48,6 +76,9 @@ constexpr float kMapScaleKpa      = 1.0f / 30.0f;  // uint16 LE
 constexpr float kOilPressScaleKpa = 1.0f / 30.0f;  // uint16 LE
 constexpr float kBattScaleV       = 0.001f;        // uint16 LE (mV)
 constexpr float kFuelLevelScale   = 0.5f;          // uint8
+// BASE+5 Fueling の fuel_pulse: byte4-5、int16 LE、1/300 ms（rusEFI の scaled_ms = PACK_MULT_MS 300）
+constexpr uint8_t kFuelingOffPulse = 4;
+constexpr float kInjPulseScaleMs   = 1.0f / 300.0f;
 constexpr float kTempOffsetC      = -40.0f;        // uint8 の温度はすべて -40 オフセット
 
 // ---------------------------------------------------------------- 妥当性判定

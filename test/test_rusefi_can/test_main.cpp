@@ -67,8 +67,69 @@ void test_UT01_out_of_range_id_rejected() {
     TEST_ASSERT_FALSE(decodeFrame(0x1FF, d, 8, kBase).accepted);  // 境界の 1 つ下
     TEST_ASSERT_TRUE(decodeFrame(0x200, d, 8, kBase).accepted);   // 下端
     TEST_ASSERT_TRUE(decodeFrame(0x20B, d, 8, kBase).accepted);   // 上端 (BASE+11)
-    TEST_ASSERT_FALSE(decodeFrame(0x20C, d, 8, kBase).accepted);  // 上端の 1 つ上
+    TEST_ASSERT_FALSE(decodeFrame(0x20C, d, 8, kBase).accepted);  // BASE+12 は識別子が無ければ受理しない
+    TEST_ASSERT_FALSE(decodeFrame(0x20D, d, 8, kBase).accepted);  // BASE+13 も識別子が無ければ受理しない
+    TEST_ASSERT_FALSE(decodeFrame(0x20E, d, 8, kBase).accepted);  // 上端の 1 つ上
     TEST_ASSERT_FALSE(decodeFrame(0x7E8, d, 8, kBase).accepted);  // OBD-II 応答は無視
+}
+
+// BASE+12: ECU の Lua が送る追加データ（燃費・ISCV・大気圧・dwell）
+void test_user_extra_frame() {
+    uint8_t d[8];
+    zero(d);
+    d[0] = 0x7B;  // 瞬間燃費 123 -> 12.3 km/L
+    d[1] = 0x00;
+    d[2] = 0xE7;  // 平均燃費 999 -> 99.9 km/L
+    d[3] = 0x03;
+    d[4] = 71;    // ISCV 35.5 %
+    d[5] = 203;   // 大気圧 101.5 kPa
+    d[6] = 60;    // dwell 3.00 ms
+    d[7] = kUserExtraMagic;
+
+    const DecodeResult r = decodeFrame(kBase + kOffUserExtra, d, 8, kBase);
+    TEST_ASSERT_TRUE(r.accepted);
+    float v = 0.0f;
+    TEST_ASSERT_TRUE(find(r, SignalId::FuelEcoInstant, v));
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, 12.3f, v);
+    TEST_ASSERT_TRUE(find(r, SignalId::FuelEcoAvg, v));
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, 99.9f, v);
+    TEST_ASSERT_TRUE(find(r, SignalId::IdlePosition, v));
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, 35.5f, v);
+    TEST_ASSERT_TRUE(find(r, SignalId::Baro, v));
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, 101.5f, v);
+    TEST_ASSERT_TRUE(find(r, SignalId::DwellMs, v));
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, 3.0f, v);
+
+    // 大気圧 0（読めなかった）は信号として出さない
+    d[5] = 0;
+    TEST_ASSERT_FALSE(find(decodeFrame(kBase + kOffUserExtra, d, 8, kBase), SignalId::Baro, v));
+
+    // 識別子が違うフレームは別の機器のものとして受理しない
+    d[7] = 0x00;
+    TEST_ASSERT_FALSE(decodeFrame(kBase + kOffUserExtra, d, 8, kBase).accepted);
+}
+
+// BASE+5 Fueling: 噴射パルス幅（byte4-5、int16 LE、1/300 ms）
+void test_fueling_injector_pulse() {
+    uint8_t d[8];
+    zero(d);
+    d[4] = 0x84;  // 900 -> 3.00 ms
+    d[5] = 0x03;
+    float v = 0.0f;
+    TEST_ASSERT_TRUE(find(decodeFrame(kBase + kOffFueling, d, 8, kBase), SignalId::InjPulseMs, v));
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, 3.0f, v);
+}
+
+// BASE+13: 噴射タイミング（int16 LE、0.1 deg。負の値がある）
+void test_user_extra2_injection_timing() {
+    uint8_t d[8];
+    zero(d);
+    d[0] = 0xF0;  // -3600 -> -360.0 deg
+    d[1] = 0xF1;
+    d[7] = kUserExtra2Magic;
+    float v = 0.0f;
+    TEST_ASSERT_TRUE(find(decodeFrame(kBase + kOffUserExtra2, d, 8, kBase), SignalId::InjTiming, v));
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, -360.0f, v);
 }
 
 void test_UT01_extended_id_uses_same_arithmetic() {
@@ -356,6 +417,9 @@ int main(int, char**) {
     RUN_TEST(test_UT01_base_id_offset);
     RUN_TEST(test_UT01_out_of_range_id_rejected);
     RUN_TEST(test_UT01_extended_id_uses_same_arithmetic);
+    RUN_TEST(test_user_extra_frame);
+    RUN_TEST(test_fueling_injector_pulse);
+    RUN_TEST(test_user_extra2_injection_timing);
     RUN_TEST(test_UT02_lambda_decode);
     RUN_TEST(test_UT02_lambda_is_little_endian);
     RUN_TEST(test_UT02_lambda_validity);

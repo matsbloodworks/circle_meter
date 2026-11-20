@@ -21,8 +21,16 @@ struct Config {
     // ---- 表示 ----
     bool showAfr = true;             ///< true=AFR, false=λ (SYS-14)
     float stoich = kStoichGasoline;  ///< 5.0 - 20.0
+#ifdef USER_RING_LOW
+    float ringLo = USER_RING_LOW;    ///< リング下端 λ (ユーザー設定)
+#else
     float ringLo = 0.68f;            ///< リング下端 λ (AFR 10.0 相当)
+#endif
+#ifdef USER_RING_HIGH
+    float ringHi = USER_RING_HIGH;   ///< リング上端 λ (ユーザー設定)
+#else
     float ringHi = 1.36f;            ///< リング上端 λ (AFR 20.0 相当)
+#endif
 
     LambdaZoneConfig zones{0.75f, 0.85f, 1.03f, 1.10f};  ///< DOC-23 §3.2
     EgtConfig egt{850, 920};                             ///< DOC-23 §4

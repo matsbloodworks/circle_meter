@@ -18,6 +18,7 @@
 #include "display_policy.h"
 #include "lambda_sensor_state.h"
 #include "lvgl_port.h"
+#include "page_data.h"
 #include "page_lambda.h"
 #include "page_needle.h"
 #include "page_splash.h"
@@ -49,6 +50,7 @@ ui::LvglPort g_port;
 ui::PageSplash g_splash;
 ui::PageLambda g_lambda;  // SYS-21 (a) リング（AEM 風）
 ui::PageNeedle g_needle;  // SYS-21 (b) 指針式 A（大森風）
+ui::PageData g_data;      // データページ（新デザイン）
 ui::IPage* g_active = nullptr;
 
 /// SYS-21: 設定の表示デザインに対応するページ。両方とも起動時に作ってあり、切替は表示/非表示だけ（規則 5）
@@ -125,6 +127,7 @@ void simTask(void*) {
         g_store.update(SignalId::WboTempC, 780.0f, now);
         g_store.update(SignalId::Egt1, o.egtC, now);
         g_store.update(SignalId::Rpm, o.rpm, now);
+        g_store.update(SignalId::VehicleSpeed, o.vss, now);
         g_store.update(SignalId::Clt, 85.0f, now);
         g_store.update(SignalId::BattVolt, 13.8f, now);
     }
@@ -191,9 +194,28 @@ void handleDebugKeys() {
             g_cfg.dialStyle = static_cast<uint8_t>((g_cfg.dialStyle + 1) % n);
             activatePage(g_cfg.dialStyle);
             Serial.printf("dial style: %s\n", g_active->id());
+        } else if (c == 'c') {
+            // C面（古いゲージ）への切り替え
+            if (g_active != &g_lambda && g_active != &g_needle) {
+                if (g_active != nullptr) {
+                    g_active->onHide();
+                }
+                g_active = &g_lambda;  // 古いC面を表示
+                g_active->onShow();
+                g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
+                Serial.printf("page: C面 (%s)\n", g_active->id());
+            }
         } else if (c == 'm') {
-            g_cfg.showAfr = !g_cfg.showAfr;
-            Serial.printf("display: %s\n", g_cfg.showAfr ? "AFR" : "LAMBDA");
+            // M面（新しいバーグラフ）への切り替え
+            if (g_active != &g_data) {
+                if (g_active != nullptr) {
+                    g_active->onHide();
+                }
+                g_active = &g_data;
+                g_active->onShow();
+                g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
+                Serial.printf("page: M面 (%s)\n", g_active->id());
+            }
         }
 #endif
     }
@@ -293,6 +315,8 @@ void setup() {
     g_lambda.onHide();
     g_needle.onCreate(g_port.screen(), g_cfg);
     g_needle.onHide();
+    g_data.onCreate(g_port.screen(), g_cfg);
+    g_data.onHide();
     g_splash.onShow();
 
     // SYS-18: スプラッシュ表示中も信号源は動いている

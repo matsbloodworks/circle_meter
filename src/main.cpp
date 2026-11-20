@@ -13,9 +13,11 @@
 
 #include <atomic>
 
+#include "cm_vlw_fonts.h"
 #include "config.h"
 #include "display_filter.h"
 #include "display_text.h"
+#include "gauge_pages.h"
 #include "lambda_sensor_state.h"
 #include "signal_store.h"
 #include "sweep_sim.h"
@@ -58,6 +60,33 @@ CanDriver g_can;
 // フレーム分をまとめて転送する
 M5Canvas g_canvas(&M5Dial.Display);
 bool g_canvasReady = false;
+
+// ページ: 0..kGaugePageCount-1 が数値を並べるページ（gauge_pages.h）、最後が元からある λ のページ。
+// ダイヤルを回して切り替える。起動時は 1 つ目の数値ページ
+constexpr int kLambdaPage = kGaugePageCount;
+constexpr int kPageCount  = kGaugePageCount + 1;
+constexpr int kEncoderCountsPerClick = 4;  // M5Dial のダイヤルは 1 クリックで 4 カウント進む
+int g_page = 0;
+
+// 数値ページのフォント（tools/make_vlw_font.py が生成。数字 = DSEG7、それ以外 = Orbitron）。
+// 起動時に 1 回だけ読み込む。読み込めなければ内蔵フォントで描く
+lgfx::VLWfont g_fontValue;
+lgfx::VLWfont g_fontLabel;
+lgfx::VLWfont g_fontTitle;
+lgfx::PointerWrapper g_fontValueData;
+lgfx::PointerWrapper g_fontLabelData;
+lgfx::PointerWrapper g_fontTitleData;
+bool g_gaugeFontsReady = false;
+
+void loadGaugeFonts() {
+    g_fontValueData.set(cm_vlw_value, cm_vlw_value_len);
+    g_fontLabelData.set(cm_vlw_label, cm_vlw_label_len);
+    g_fontTitleData.set(cm_vlw_title, cm_vlw_title_len);
+    const bool value  = g_fontValue.loadFont(&g_fontValueData);
+    const bool label  = g_fontLabel.loadFont(&g_fontLabelData);
+    const bool title  = g_fontTitle.loadFont(&g_fontTitleData);
+    g_gaugeFontsReady = value && label && title;
+}
 
 constexpr uint32_t kUiPeriodMs = 33;  // 約 30fps（SYS-12）
 
@@ -119,6 +148,19 @@ void simTask(void*) {
         g_store.update(SignalId::Rpm, o.rpm, now);
         g_store.update(SignalId::Clt, 85.0f, now);
         g_store.update(SignalId::BattVolt, 13.8f, now);
+        // 数値ページ用。回転数に比例させて、桁が変わるところまで動かす
+        const float k = (o.rpm - SweepSim::kRpmLo) / (SweepSim::kRpmHi - SweepSim::kRpmLo);
+        g_store.update(SignalId::Iat, 25.0f + 20.0f * k, now);
+        g_store.update(SignalId::Map, 30.0f + 70.0f * k, now);
+        g_store.update(SignalId::Baro, 101.5f, now);
+        g_store.update(SignalId::IgnitionTiming, -5.0f + 40.0f * k, now);
+        g_store.update(SignalId::DwellMs, 3.5f - 1.0f * k, now);
+        g_store.update(SignalId::InjDuty, 2.0f + 83.0f * k, now);
+        g_store.update(SignalId::IdlePosition, 35.0f - 20.0f * k, now);
+        g_store.update(SignalId::FuelEcoInstant, 99.9f - 95.0f * k, now);
+        g_store.update(SignalId::FuelEcoAvg, 12.3f, now);
+        g_store.update(SignalId::InjPulseMs, 1.8f + 10.0f * k, now);
+        g_store.update(SignalId::InjTiming, -360.0f + 120.0f * k, now);
     }
 }
 #endif
@@ -307,6 +349,84 @@ uint32_t egtColorHex(const DisplayValues& v) {
     }
 }
 
+/// 下端に、全ページ中の現在位置を点で出す
+void drawPageDots(LovyanGFX& d) {
+    constexpr int kDotY     = 224;
+    constexpr int kDotPitch = 12;
+    const int x0            = kCx - kDotPitch * (kPageCount - 1) / 2;
+    for (int i = 0; i < kPageCount; ++i) {
+        d.fillCircle(x0 + i * kDotPitch, kDotY, (i == g_page) ? 3 : 2,
+                     c565((i == g_page) ? color::kText : color::kTrack));
+    }
+}
+
+/// 数値を並べるページ（gauge_pages.h の 1 ページ分）
+void drawGaugePage(const Snapshot& snap, const GaugePage& page) {
+    LovyanGFX& d =
+        g_canvasReady ? static_cast<LovyanGFX&>(g_canvas) : static_cast<LovyanGFX&>(M5Dial.Display);
+    const uint16_t bg = c565(color::kBg);
+    d.fillScreen(bg);
+
+    // 専用フォントが読めていればそれを、駄目なら内蔵フォントを使う（大きさは見た目が近くなる倍率）
+    const lgfx::IFont* titleFont = g_gaugeFontsReady ? static_cast<const lgfx::IFont*>(&g_fontTitle)
+                                                     : static_cast<const lgfx::IFont*>(&fonts::Font0);
+    const lgfx::IFont* labelFont = g_gaugeFontsReady ? static_cast<const lgfx::IFont*>(&g_fontLabel)
+                                                     : static_cast<const lgfx::IFont*>(&fonts::Font2);
+    const lgfx::IFont* valueFont = g_gaugeFontsReady ? static_cast<const lgfx::IFont*>(&g_fontValue)
+                                                     : static_cast<const lgfx::IFont*>(&fonts::Font4);
+    const float valueSize        = g_gaugeFontsReady ? 1.0f : 1.2f;
+
+    d.setFont(titleFont);
+    d.setTextSize(1);
+    d.setTextDatum(middle_center);
+    d.setTextColor(c565(color::kTextSub), bg);
+    d.drawString(page.title, kCx, 26);
+
+    // 画面を縦横 4 分割（2 x 2）にして、1 マスに 1 項目を出す。
+    // 項目の並び: 0 = 左上、1 = 右上、2 = 左下、3 = 右下。各マスは上から 項目名・値・単位。
+    // 位置と大きさは、最長の値（"100.0" や "-12.5"）が円（半径 114）からはみ出さないように決めてある
+    constexpr int kCellDx      = 54;   // マスの中心の、画面中心からの横のずれ
+    constexpr int kLabelDy     = -26;  // マスの基準（値の中心）からの、項目名のずれ
+    constexpr int kUnitDy      = 22;   // 同、単位のずれ
+    constexpr int kTopValueY   = 82;   // 上段の値の中心
+    constexpr int kBotValueY   = 162;  // 下段の値の中心
+
+    // 区切りの十字線（見出しと下端の点に重ならない範囲だけ引く）
+    const uint16_t lineColor = c565(color::kTrack);
+    d.drawFastHLine(10, kCy, 220, lineColor);
+    d.drawFastVLine(kCx, 40, 172, lineColor);
+
+    char buf[16];
+    const int cells = (page.count < static_cast<int>(kGaugeMaxItems)) ? page.count
+                                                                      : static_cast<int>(kGaugeMaxItems);
+    for (int i = 0; i < cells; ++i) {
+        const GaugeItem& item = page.items[i];
+        const int x           = kCx + ((i % 2 == 0) ? -kCellDx : kCellDx);
+        const int y           = (i < 2) ? kTopValueY : kBotValueY;
+
+        const bool has   = formatGaugeValue(buf, sizeof(buf), snap, item);
+        const bool stale = has && snap.freshnessOf(item.id) != Freshness::Fresh;
+        const uint16_t valueColor = c565((!has || stale) ? color::kDisabled : color::kText);
+
+        d.setTextDatum(middle_center);
+        d.setFont(labelFont);
+        d.setTextSize(1);
+        d.setTextColor(c565(color::kTextSub), bg);
+        d.drawString(item.label, x, y + kLabelDy);
+        d.drawString(item.unit, x, y + kUnitDy);
+
+        d.setFont(valueFont);
+        d.setTextSize(valueSize);
+        d.setTextColor(valueColor, bg);
+        d.drawString(buf, x, y);
+    }
+
+    drawPageDots(d);
+    if (g_canvasReady) {
+        g_canvas.pushSprite(0, 0);
+    }
+}
+
 void drawMainScreen(const DisplayValues& v) {
     // スプライトが確保できていればそこへ、駄目なら直接ディスプレイへ描く
     LovyanGFX& d =
@@ -375,9 +495,26 @@ void drawMainScreen(const DisplayValues& v) {
              static_cast<unsigned long>(g_frameUsTotal ? 1000000UL * g_frameCount / g_frameUsTotal : 0));
     d.drawString(buf, kCx, kStatusY);
 
+    drawPageDots(d);
     if (g_canvasReady) {
         g_canvas.pushSprite(0, 0);
     }
+}
+
+/// 現在のページを描く。λ の表示フィルタは、別のページを出している間も毎フレーム更新しておく
+/// （戻ったときに古い平滑値から始まらないようにする）
+void drawCurrentPage(uint32_t nowMs) {
+    const Snapshot snap    = g_store.snapshot(nowMs);
+    const DisplayValues dv = g_filter.update(snap, g_cfg);
+    if (g_page == kLambdaPage) {
+        drawMainScreen(dv);
+    } else {
+        drawGaugePage(snap, kGaugePages[g_page]);
+    }
+}
+
+void changePage(int delta) {
+    g_page = wrapPage(g_page, delta, kPageCount);
 }
 
 // ---------------------------------------------------------------- シリアル
@@ -397,8 +534,9 @@ void printBanner() {
 }
 
 void printUiReady() {
-    Serial.printf("ui ready: sram %u KB free / canvas %s\n", static_cast<unsigned>(ESP.getFreeHeap() / 1024),
-                  g_canvasReady ? "ok" : "FAILED");
+    Serial.printf("ui ready: sram %u KB free / canvas %s / gauge fonts %s\n",
+                  static_cast<unsigned>(ESP.getFreeHeap() / 1024), g_canvasReady ? "ok" : "FAILED",
+                  g_gaugeFontsReady ? "ok" : "FAILED");
 }
 
 /// SWR-68: 'i' で起動ログを出し直す。M5Dial のネイティブ USB は、PC がポートを開く前の出力を取りこぼす
@@ -417,6 +555,10 @@ void handleSerialKeys() {
         } else if (c == 'm') {
             g_cfg.showAfr = !g_cfg.showAfr;
             Serial.printf("display: %s\n", g_cfg.showAfr ? "AFR" : "LAMBDA");
+        } else if (c == 'p') {
+            // ダイヤルを 1 クリック回したのと同じ（PC からの確認用）
+            changePage(1);
+            Serial.printf("page: %d/%d\n", g_page + 1, kPageCount);
         }
 #ifdef CM_ENABLE_CAN_SIM
         else if (c == 'h') {
@@ -485,6 +627,7 @@ void setup() {
     g_canvas.setColorDepth(16);
     g_canvas.setPsram(false);  // DOC-12 §7.1: PSRAM は無い
     g_canvasReady = g_canvas.createSprite(240, 240);
+    loadGaugeFonts();
 
 #ifdef CM_ENABLE_CAN_SIM
     xTaskCreatePinnedToCore(simTask, "sim", 4096, nullptr, 10, nullptr, 0);
@@ -500,7 +643,7 @@ void setup() {
     showSplash(g_cfg.brightness);
 
     // 最初の本画面を描いてからバックライトを戻す（黒画面の一瞬を見せない）
-    drawMainScreen(g_filter.update(g_store.snapshot(millis()), g_cfg));
+    drawCurrentPage(millis());
     fadeBacklight(0, brightnessPwm(g_cfg.brightness), 200);
 
     g_uiReady = true;
@@ -517,7 +660,7 @@ void loop() {
     if (static_cast<int32_t>(now - nextUiMs) >= 0) {
         nextUiMs          = now + kUiPeriodMs;
         const uint32_t t0 = micros();
-        drawMainScreen(g_filter.update(g_store.snapshot(now), g_cfg));
+        drawCurrentPage(now);
         g_frameUsTotal += micros() - t0;
         g_frameCount++;
         if (g_frameCount >= 64) {  // 直近 64 フレームの平均に落とす
@@ -526,8 +669,16 @@ void loop() {
         }
     }
 
-    // SYS-31: ボタン短押しで AFR / λ 表示を切り替える
-    if (M5Dial.BtnA.wasClicked()) {
+    // ダイヤルを回すとページが変わる（右回しで次、左回しで前。端は反対側へつながる）
+    static long encBase = M5Dial.Encoder.read();
+    const long clicks   = (M5Dial.Encoder.read() - encBase) / kEncoderCountsPerClick;
+    if (clicks != 0) {
+        encBase += clicks * kEncoderCountsPerClick;
+        changePage(static_cast<int>(clicks));
+    }
+
+    // SYS-31: ボタン短押しで AFR / λ 表示を切り替える（λ のページを出しているときだけ）
+    if (M5Dial.BtnA.wasClicked() && g_page == kLambdaPage) {
         g_cfg.showAfr = !g_cfg.showAfr;
     }
 

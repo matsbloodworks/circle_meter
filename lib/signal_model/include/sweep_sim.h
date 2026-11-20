@@ -15,6 +15,7 @@ struct SweepOutput {
     float lambda = 0.0f;
     float egtC   = 0.0f;
     float rpm    = 0.0f;
+    float vss    = 0.0f;  ///< Vehicle Speed (km/h)
 };
 
 class SweepSim {
@@ -25,6 +26,8 @@ public:
     static constexpr float kEgtHiC      = 960.0f;  ///< λ 上端での EGT（DANGER 920 を超える）
     static constexpr float kRpmLo       = 1200.0f;
     static constexpr float kRpmHi       = 7200.0f;
+    static constexpr float kVssLo       = 0.0f;    ///< Vehicle Speed min (km/h)
+    static constexpr float kVssHi       = 999.0f;  ///< Vehicle Speed max (km/h)
     static constexpr uint32_t kOneWayMs = 8500;  ///< 下端 -> 上端の所要時間（旧 m5dial_sim と同じ）
     static constexpr float kEgtStepC    = 5.0f;  ///< rusEFI の EGT 分解能（DOC-13）
 
@@ -49,6 +52,7 @@ public:
         const float egt = kEgtLoC + (kEgtHiC - kEgtLoC) * m_pos;
         o.egtC          = static_cast<float>(static_cast<int32_t>(egt / kEgtStepC + 0.5f)) * kEgtStepC;
         o.rpm           = kRpmLo + (kRpmHi - kRpmLo) * m_pos;
+        o.vss           = kVssLo + (kVssHi - kVssLo) * m_pos;
         return o;
     }
 

@@ -46,6 +46,10 @@ void decodeSensors2(DecodeResult& r, const uint8_t* d) {
     push(r, SignalId::BattVolt, static_cast<float>(le16(d, 6)) * kBattScaleV);
 }
 
+void decodeFueling(DecodeResult& r, const uint8_t* d) {
+    push(r, SignalId::InjPulseMs, static_cast<float>(le16s(d, kFuelingOffPulse)) * kInjPulseScaleMs);
+}
+
 void decodeFueling3(DecodeResult& r, const uint8_t* d) {
     const float lambda1 = static_cast<float>(le16(d, 0)) * kLambdaScale;
     push(r, SignalId::Lambda1, lambda1);
@@ -60,6 +64,19 @@ void decodeEgts(DecodeResult& r, const uint8_t* d) {
     // rusEFI 本体が送るのは Egt1/Egt2 のみ。Egt3-8 は常に 0 のため読まない。
     push(r, SignalId::Egt1, static_cast<float>(d[0]) * kEgtScaleC);
     push(r, SignalId::Egt2, static_cast<float>(d[1]) * kEgtScaleC);
+}
+
+/// BASE+12: ECU の Lua が送る追加データ。識別子が違えば何も取り出さない（呼び出し側で判定済み）
+void decodeUserExtra(DecodeResult& r, const uint8_t* d) {
+    push(r, SignalId::FuelEcoInstant, static_cast<float>(le16(d, 0)) * kFuelEcoScaleKml);
+    push(r, SignalId::FuelEcoAvg, static_cast<float>(le16(d, 2)) * kFuelEcoScaleKml);
+    push(r, SignalId::IdlePosition, static_cast<float>(d[4]) * kIdlePosScalePct);
+    // 大気圧 0 は「読めなかった」。入れなければ鮮度が上がらず、画面は "--" になる
+    const float baroKpa = static_cast<float>(d[5]) * kBaroScaleKpa;
+    if (baroKpa >= kBaroMinValidKpa) {
+        push(r, SignalId::Baro, baroKpa);
+    }
+    push(r, SignalId::DwellMs, static_cast<float>(d[6]) * kDwellScaleMs);
 }
 
 }  // namespace
@@ -88,11 +105,26 @@ DecodeResult decodeFrame(uint32_t id, const uint8_t* data, uint8_t dlc, uint32_t
         case kOffSensors2:
             decodeSensors2(r, data);
             break;
+        case kOffFueling:
+            decodeFueling(r, data);
+            break;
         case kOffFueling3:
             decodeFueling3(r, data);
             break;
         case kOffEgts:
             decodeEgts(r, data);
+            break;
+        case kOffUserExtra:
+            if (data[kUserExtraOffMagic] != kUserExtraMagic) {
+                return r;  // 別の機器のフレーム。受理しない
+            }
+            decodeUserExtra(r, data);
+            break;
+        case kOffUserExtra2:
+            if (data[kUserExtraOffMagic] != kUserExtra2Magic) {
+                return r;  // 別の機器のフレーム。受理しない
+            }
+            push(r, SignalId::InjTiming, static_cast<float>(le16s(data, 0)) * kInjTimingScaleDeg);
             break;
         default:
             // 範囲内だが本機が使わないフレーム（PedalTps / Fueling / Cams / Knock / Status11）。

@@ -27,6 +27,7 @@ ROOT = os.path.dirname(HERE)
 TTF = os.path.join(ROOT, "assets", "fonts", "Montserrat-Bold.ttf")
 B612_BOLD = os.path.join(ROOT, "assets", "fonts", "B612Mono-Bold.ttf")
 B612_REG = os.path.join(ROOT, "assets", "fonts", "B612Mono-Regular.ttf")
+DSEG7_BOLD = os.path.join(ROOT, "assets", "fonts", "DSEG7Classic-Bold.ttf")
 UPPER = " -./0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ\u00b0"  # ":" と "°" は λ センサの状態表示（SWR-51）
 ASCII = "".join(chr(c) for c in range(0x20, 0x7F))
 OUT_DIR = os.path.join(ROOT, "assets", "lcd21", "fonts")
@@ -47,6 +48,8 @@ FONTS = [
     ("cm_font_b612_scale", 28, "0123456789", "A: 目盛り数字", B612_REG),
     ("cm_font_b612_label", 22, UPPER, "A: 銘板・NO SIGNAL", B612_BOLD),
     ("cm_font_b612_small", 14, ASCII, "A: 小さい銘板・診断", B612_REG),
+    # DSEG7Classic（デジタル7セグメント）
+    ("cm_font_dseg7_afr", 70, DIGITS, "A: 主数値 AFR（DSEG7）", DSEG7_BOLD),
 ]
 
 

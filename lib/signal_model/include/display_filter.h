@@ -30,6 +30,11 @@ struct DisplayValues {
     bool egtStale     = false;
     float egtC        = 0.0f;  ///< LPF 後
     EgtLevel egtLevel = EgtLevel::Normal;
+    // CLT / IAT
+    float cltC        = 0.0f;  ///< クーラント温度
+    float iatC        = 0.0f;  ///< 吸気温度
+    // Speed
+    float speedKmh    = 0.0f;  ///< 速度
 };
 
 class DisplayFilter {
@@ -85,6 +90,11 @@ public:
         } else {
             m_egtSeeded = false;
         }
+
+        snap.get(SignalId::Clt, v.cltC);
+        snap.get(SignalId::Iat, v.iatC);
+        snap.get(SignalId::VehicleSpeed, v.speedKmh);
+
         return v;
     }
 
