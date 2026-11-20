@@ -128,13 +128,15 @@ void simTask(void*) {
         g_store.update(SignalId::Egt1, o.egtC, now);
         g_store.update(SignalId::Rpm, o.rpm, now);
         g_store.update(SignalId::VehicleSpeed, o.vss, now);
-        g_store.update(SignalId::Clt, 85.0f, now);
-        g_store.update(SignalId::Iat, 25.0f, now);  // MAT
-        g_store.update(SignalId::Map, 50.0f, now);
-        g_store.update(SignalId::OilPressure, 3.0f, now);
-        g_store.update(SignalId::OilTemp, 95.0f, now);
-        g_store.update(SignalId::IdlePosition, 10.0f, now);  // ISCV duty
-        g_store.update(SignalId::BattVolt, 13.8f, now);  // vBatt
+        // 右列のデモ値を時間に応じて変動させる
+        const float phase = (now % 10000) / 10000.0f * 6.28f;  // 10秒周期
+        g_store.update(SignalId::Clt, 70.0f + 20.0f * (0.5f + 0.5f * sinf(phase)), now);  // 60-80 -> 50-100 range
+        g_store.update(SignalId::Iat, 20.0f + 15.0f * (0.5f + 0.5f * sinf(phase + 1.0f)), now);  // MAT
+        g_store.update(SignalId::Map, 40.0f + 20.0f * (0.5f + 0.5f * sinf(phase + 2.0f)), now);
+        g_store.update(SignalId::OilPressure, 2.0f + 2.0f * (0.5f + 0.5f * sinf(phase + 3.0f)), now);
+        g_store.update(SignalId::OilTemp, 90.0f + 30.0f * (0.5f + 0.5f * sinf(phase + 4.0f)), now);  // 60-120
+        g_store.update(SignalId::IdlePosition, 5.0f + 15.0f * (0.5f + 0.5f * sinf(phase + 5.0f)), now);  // ISCV duty
+        g_store.update(SignalId::BattVolt, 12.5f + 2.0f * (0.5f + 0.5f * sinf(phase + 6.0f)), now);  // vBatt 11.5-13.5
     }
 }
 #endif

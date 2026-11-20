@@ -55,13 +55,14 @@ uint32_t egtColorHex(const DisplayValues& v, bool blinkOn) {
     if (!v.hasEgt || v.egtStale) {
         return color::kDisabled;
     }
-    if (v.egtLevel == EgtLevel::Danger) {
-        return blinkOn ? color::kDanger : 0x601010;  // 2 Hz 点滅（SWR-46）
+    // 温度値ベースの色変化: 500以上で赤、400以上で黄色
+    if (v.egtC >= 500.0f) {
+        return blinkOn ? 0xFF3333 : 0x661515;  // 赤（点滅）
     }
-    if (v.egtLevel == EgtLevel::Warn) {
-        return color::kWarn;
+    if (v.egtC >= 400.0f) {
+        return 0xFFDD00;  // 黄色
     }
-    return color::kEgtNormal;
+    return color::kText;  // 白
 }
 
 uint32_t sensorStatusColorHex(const LambdaSensorInfo& info) {
