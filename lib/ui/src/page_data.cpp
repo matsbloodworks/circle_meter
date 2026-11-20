@@ -201,8 +201,8 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     std::snprintf(m_tpsBuf, sizeof(m_tpsBuf), "%.0f", v.tpsPercent);
     lv_label_set_text_static(m_tpsLabel, m_tpsBuf);
 
-    // vBatt表示（小数点第1位を表示）
-    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.1f", v.battVolt);
+    // vBatt表示（小数点フォント未対応のため 10 倍で整数表示 例：13.8V → "138"）
+    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.0f", v.battVolt * 10.0f);
     lv_label_set_text_static(m_vBattLabel, m_vBattBuf);
     lv_obj_set_style_text_color(m_vBattLabel, lv_color_hex(vbColorHex(v)), 0);
 }
