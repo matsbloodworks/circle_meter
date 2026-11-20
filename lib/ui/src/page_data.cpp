@@ -18,14 +18,14 @@ namespace {
 constexpr int kLeftX  = 70;    // 左側中央 X（さらに左へ）
 constexpr int kRightX = 310;   // 右側中央 X（さらに左へ）
 constexpr int kRightLeftX = 270;   // 右側・左列 X（MAT、OIL T、ISCV用）
-constexpr int kRightRightX = 350;  // 右側・右列 X（MAP、OIL P用）
+constexpr int kRightRightX = 350;  // 右側・右列 X（MAP、OIL P、TPS用）
 
 constexpr int kEgtLabelY   = 100;   // EGT ラベル（上）
 constexpr int kEgtY        = 130;   // EGT 値
-constexpr int kAfrLabelY   = 160;   // AFR ラベル
-constexpr int kAfrY        = 210;   // AFR（中央）下げた
-constexpr int kSpeedLabelY = 290;   // Speed ラベル
-constexpr int kSpeedY      = 320;   // Speed 値
+constexpr int kAfrLabelY   = 170;   // AFR ラベル（+10px下）
+constexpr int kAfrY        = 220;   // AFR 値（+10px下）
+constexpr int kSpeedLabelY = 300;   // Speed ラベル（+10px下）
+constexpr int kSpeedY      = 330;   // Speed 値（+10px下）
 
 constexpr int kRightLabelY = 50;    // 右側ラベル Y 開始
 constexpr int kRightStep   = 70;    // 右側データの Y 間隔
@@ -110,11 +110,16 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
 
     m_oilPressureLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + kRightStep * 2 + 25);
 
-    // ISCV（中央揃え）
-    lv_obj_t* iscvTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 3);
+    // ISCV（左） | TPS（右）
+    lv_obj_t* iscvTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightLeftX, kRightLabelY + kRightStep * 3);
     lv_label_set_text_static(iscvTitleLabel, "ISCV");
 
-    m_iscvDutyLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 3 + 25);
+    m_iscvDutyLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightLeftX, kRightLabelY + kRightStep * 3 + 25);
+
+    lv_obj_t* tpsTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightRightX, kRightLabelY + kRightStep * 3);
+    lv_label_set_text_static(tpsTitleLabel, "TPS");
+
+    m_tpsLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + kRightStep * 3 + 25);
 
     // vBatt（中央揃え）
     lv_obj_t* vBattTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 4);
@@ -186,8 +191,12 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     std::snprintf(m_iscvDutyBuf, sizeof(m_iscvDutyBuf), "%.0f", v.iscvDuty);
     lv_label_set_text_static(m_iscvDutyLabel, m_iscvDutyBuf);
 
-    // vBatt表示
-    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.1f", v.battVolt);
+    // TPS表示
+    std::snprintf(m_tpsBuf, sizeof(m_tpsBuf), "%.0f", v.tpsPercent);
+    lv_label_set_text_static(m_tpsLabel, m_tpsBuf);
+
+    // vBatt表示（整数部のみ）
+    std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.0f", v.battVolt);
     lv_label_set_text_static(m_vBattLabel, m_vBattBuf);
 }
 
