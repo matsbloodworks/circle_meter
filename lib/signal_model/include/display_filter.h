@@ -41,6 +41,8 @@ struct DisplayValues {
     float iscvDuty    = 0.0f;  ///< ISCV duty cycle (%)
     float battVolt    = 0.0f;  ///< バッテリー電圧
     float tpsPercent  = 0.0f;  ///< スロットル開度 (%)
+    float pulseWidth  = 0.0f;  ///< インジェクターパルス幅 (ms)
+    float advanceDeg  = 0.0f;  ///< 点火進角 (deg)
     // Speed
     float speedKmh    = 0.0f;  ///< 速度
 };
@@ -108,6 +110,8 @@ public:
         snap.get(SignalId::OilTemp, v.oilTempC);
         snap.get(SignalId::IdlePosition, v.iscvDuty);  // ISCV duty = Idle Position
         snap.get(SignalId::BattVolt, v.battVolt);
+        snap.get(SignalId::InjPulseMs, v.pulseWidth);
+        snap.get(SignalId::IgnitionTiming, v.advanceDeg);
         // TPS はシステムにまだ実装されていないため、デモ値を使用
         v.tpsPercent = 20.0f;
 

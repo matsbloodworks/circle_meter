@@ -20,8 +20,8 @@ constexpr int kRightX = 310;   // 右側中央 X（さらに左へ）
 constexpr int kRightLeftX = 270;   // 右側・左列 X（MAT、OIL T、ISCV用）
 constexpr int kRightRightX = 350;  // 右側・右列 X（MAP、OIL P、TPS用）
 
-constexpr int kEgtLabelY   = 100;   // EGT ラベル（上）
-constexpr int kEgtY        = 120;   // EGT 値（-10px上）
+constexpr int kEgtLabelY   = 120;   // EGT ラベル（+20px下）
+constexpr int kEgtY        = 150;   // EGT 値
 constexpr int kAfrLabelY   = 170;   // AFR ラベル（+10px下）
 constexpr int kAfrY        = 220;   // AFR 値（+10px下）
 constexpr int kSpeedLabelY = 300;   // Speed ラベル（+10px下）

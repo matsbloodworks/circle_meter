@@ -36,6 +36,8 @@ private:
     lv_obj_t* m_iscvDutyLabel = nullptr;
     lv_obj_t* m_vBattLabel = nullptr;
     lv_obj_t* m_tpsLabel = nullptr;
+    lv_obj_t* m_pwLabel = nullptr;
+    lv_obj_t* m_advLabel = nullptr;
 
     lv_obj_t* m_speedTitle = nullptr;
     lv_obj_t* m_cltTitle = nullptr;
@@ -51,6 +53,8 @@ private:
     char m_iscvDutyBuf[16]{};
     char m_vBattBuf[16]{};
     char m_tpsBuf[16]{};
+    char m_pwBuf[16]{};
+    char m_advBuf[16]{};
 
     lv_obj_t* m_diag = nullptr;
     DisplayFilter m_filter;
