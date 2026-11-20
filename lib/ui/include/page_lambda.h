@@ -27,7 +27,6 @@ private:
 
     lv_obj_t* m_root      = nullptr;
     lv_obj_t* m_freshness = nullptr;
-    lv_obj_t* m_unit      = nullptr;
     BigNumber m_mainNum;
     BigNumber m_egtNum;
     lv_obj_t* m_status = nullptr;  // 下部: 診断文字列

@@ -59,7 +59,6 @@ void PageLambda::onCreate(lv_obj_t* parent, const Config& cfg) {
 
     m_showAfr   = cfg.showAfr;
     m_freshness = makeLabel(m_root, &lv_font_montserrat_24, color::kTextSub, 200, layout::kFreshnessY);
-    m_unit      = makeLabel(m_root, &lv_font_montserrat_32, color::kTextSub, 240, layout::kUnitY);
     m_mainNum.create(m_root, m_showAfr ? &cm_font_afr : &cm_font_lambda,
                      m_showAfr ? kMainWidthAfr : kMainWidthLambda, layout::kMainY);
     m_egtNum.create(m_root, &cm_font_egt, kEgtWidth, layout::kEgtY);
@@ -69,7 +68,6 @@ void PageLambda::onCreate(lv_obj_t* parent, const Config& cfg) {
 
     // LVGL のラベルは作成直後に "Text" と表示する。空の保持配列を参照させて消しておく
     lv_label_set_text_static(m_freshness, m_lastFreshness);
-    lv_label_set_text_static(m_unit, m_lastUnit);
     lv_label_set_text_static(m_status, m_lastStatus);
     lv_label_set_text_static(m_sensor, m_lastSensor);
 }
@@ -128,10 +126,9 @@ void PageLambda::onUpdate(const Snapshot& snap, const Config& cfg) {
     const uint32_t ringHex = (v.hasLambda && !v.lambdaStale) ? zoneColorHex(v.zone) : color::kDisabled;
     m_ring.set(v.ringRatio, ringHex, v.hasLambda);
 
-    // ---- 主数値・単位・鮮度
+    // ---- 主数値・鮮度
     formatMain(buf, sizeof(buf), v, cfg);
     m_mainNum.setText(buf, mainColorHex(v));
-    setText(m_unit, m_lastUnit, sizeof(m_lastUnit), cfg.showAfr ? "AFR" : "LAMBDA");
     setText(m_freshness, m_lastFreshness, sizeof(m_lastFreshness), freshnessText(v.lambdaFr));
 
     // ---- EGT

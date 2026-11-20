@@ -32,6 +32,15 @@ bool LvglPort::begin(DisplayHal& hal, TickFn nowMs, TickFn nowUs) {
     lv_obj_set_style_bg_color(m_screen, lv_color_hex(color::kBg), 0);
     lv_obj_set_style_bg_opa(m_screen, LV_OPA_COVER, 0);
     lv_obj_remove_flag(m_screen, LV_OBJ_FLAG_SCROLLABLE);
+
+    // タッチ入力デバイスを登録（dummy indev で自動的に LVGL がクリック判定する）
+    lv_indev_t* indev = lv_indev_create();
+    lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(indev, [](lv_indev_t*, lv_indev_data_t* data) {
+        // 画面がタッチされているフラグは常に false（イベントハンドラーで処理）
+        data->state = LV_INDEV_STATE_RELEASED;
+    });
+
     return true;
 }
 
