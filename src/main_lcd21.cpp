@@ -129,6 +129,11 @@ void simTask(void*) {
         g_store.update(SignalId::Rpm, o.rpm, now);
         g_store.update(SignalId::VehicleSpeed, o.vss, now);
         g_store.update(SignalId::Clt, 85.0f, now);
+        g_store.update(SignalId::Iat, 25.0f, now);  // MAT
+        g_store.update(SignalId::Map, 50.0f, now);
+        g_store.update(SignalId::OilPressure, 3.0f, now);
+        g_store.update(SignalId::OilTemp, 95.0f, now);
+        g_store.update(SignalId::IdlePosition, 10.0f, now);  // ISCV duty
         g_store.update(SignalId::BattVolt, 13.8f, now);
     }
 }
