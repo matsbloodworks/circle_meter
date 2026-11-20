@@ -356,6 +356,30 @@ void setup() {
     pump(150);
     fadeBacklight(0, target, kMainFadeInMs);
 
+    // タッチパネルでの C面 ⇔ M面 切り替え
+    lv_obj_add_flag(g_port.screen(), LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(
+        g_port.screen(),
+        [](lv_event_t* e) {
+            if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+            if (g_active == &g_data) {
+                // M面 → C面
+                g_active->onHide();
+                g_active = &g_lambda;
+                g_active->onShow();
+                Serial.printf("touch: C面 (%s)\n", g_active->id());
+            } else {
+                // C面 → M面
+                g_active->onHide();
+                g_active = &g_data;
+                g_active->onShow();
+                Serial.printf("touch: M面 (%s)\n", g_active->id());
+            }
+            g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
+        },
+        LV_EVENT_CLICKED,
+        nullptr);
+
     g_uiReady = true;
     printUiReady();
 }
