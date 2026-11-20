@@ -20,8 +20,8 @@ constexpr int kRightX = 310;   // 右側中央 X（さらに左へ）
 constexpr int kRightLeftX = 270;   // 右側・左列 X（MAT、OIL T、ISCV用）
 constexpr int kRightRightX = 350;  // 右側・右列 X（MAP、OIL P、TPS用）
 
-constexpr int kEgtLabelY   = 140;   // EGT ラベル（+40px下）
-constexpr int kEgtY        = 170;   // EGT 値
+constexpr int kEgtLabelY   = 140;   // EGT ラベル
+constexpr int kEgtY        = 150;   // EGT 値（-20px上）
 constexpr int kAfrLabelY   = 190;   // AFR ラベル（+30px下）
 constexpr int kAfrY        = 240;   // AFR 値（+30px下）
 constexpr int kSpeedLabelY = 300;   // Speed ラベル（+10px下）
@@ -84,51 +84,51 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     // SPD値（左に20px移動）
     m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kSpeedValueX, kSpeedY);
 
-    // === 右側：CLT / MAT|MAP / OIL T|OIL P / ISCV / vBatt ===
-    // CLT（中央揃え）
-    lv_obj_t* cltTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY);
+    // === 右側：2列x5行 ===
+    // Row 1: TPS（左） | CLT（右）
+    lv_obj_t* tpsTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightLeftX, kRightLabelY);
+    lv_label_set_text_static(tpsTitleLabel, "TPS");
+    m_tpsLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightLeftX, kRightLabelY + 25);
+
+    lv_obj_t* cltTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightRightX, kRightLabelY);
     lv_label_set_text_static(cltTitleLabel, "CLT");
+    m_cltLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + 25);
 
-    m_cltLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + 25);
-
-    // MAT（左） | MAP（右）
-    lv_obj_t* matTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightLeftX, kRightLabelY + kRightStep);
-    lv_label_set_text_static(matTitleLabel, "MAT");
-
-    m_matLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightLeftX, kRightLabelY + kRightStep + 25);
-
-    lv_obj_t* mapTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightRightX, kRightLabelY + kRightStep);
-    lv_label_set_text_static(mapTitleLabel, "MAP");
-
-    m_mapLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + kRightStep + 25);
-
-    // OIL T（左） | OIL P（右） ※位置入れ替え
-    lv_obj_t* oilTTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightLeftX, kRightLabelY + kRightStep * 2);
-    lv_label_set_text_static(oilTTitleLabel, "OIL T");
-
-    m_oilTempLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightLeftX, kRightLabelY + kRightStep * 2 + 25);
-
-    lv_obj_t* oilPTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightRightX, kRightLabelY + kRightStep * 2);
+    // Row 2: OIL_P（左） | OIL_T（右）
+    lv_obj_t* oilPTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightLeftX, kRightLabelY + kRightStep);
     lv_label_set_text_static(oilPTitleLabel, "OIL P");
+    m_oilPressureLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightLeftX, kRightLabelY + kRightStep + 25);
 
-    m_oilPressureLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + kRightStep * 2 + 25);
+    lv_obj_t* oilTTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightRightX, kRightLabelY + kRightStep);
+    lv_label_set_text_static(oilTTitleLabel, "OIL T");
+    m_oilTempLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + kRightStep + 25);
 
-    // ISCV（左） | TPS（右）
+    // Row 3: MAP（左） | MAT（右）
+    lv_obj_t* mapTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightLeftX, kRightLabelY + kRightStep * 2);
+    lv_label_set_text_static(mapTitleLabel, "MAP");
+    m_mapLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightLeftX, kRightLabelY + kRightStep * 2 + 25);
+
+    lv_obj_t* matTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightRightX, kRightLabelY + kRightStep * 2);
+    lv_label_set_text_static(matTitleLabel, "MAT");
+    m_matLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + kRightStep * 2 + 25);
+
+    // Row 4: ISCV（左） | VB（右）
     lv_obj_t* iscvTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightLeftX, kRightLabelY + kRightStep * 3);
     lv_label_set_text_static(iscvTitleLabel, "ISCV");
-
     m_iscvDutyLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightLeftX, kRightLabelY + kRightStep * 3 + 25);
 
-    lv_obj_t* tpsTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightRightX, kRightLabelY + kRightStep * 3);
-    lv_label_set_text_static(tpsTitleLabel, "TPS");
-
-    m_tpsLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + kRightStep * 3 + 25);
-
-    // vBatt（中央揃え）
-    lv_obj_t* vBattTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 4);
+    lv_obj_t* vBattTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightRightX, kRightLabelY + kRightStep * 3);
     lv_label_set_text_static(vBattTitleLabel, "VB");
+    m_vBattLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + kRightStep * 3 + 25);
 
-    m_vBattLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 4 + 25);
+    // Row 5: PW（左） | ADV（右）
+    lv_obj_t* pwTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightLeftX, kRightLabelY + kRightStep * 4);
+    lv_label_set_text_static(pwTitleLabel, "PW");
+    m_pwLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightLeftX, kRightLabelY + kRightStep * 4 + 25);
+
+    lv_obj_t* advTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightRightX, kRightLabelY + kRightStep * 4);
+    lv_label_set_text_static(advTitleLabel, "ADV");
+    m_advLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightRightX, kRightLabelY + kRightStep * 4 + 25);
 
     m_diag = makeLabel(m_root, &cm_font_b612_small, color::kDialDiag, 200, layout::kCx, 450);
     lv_label_set_text_static(m_diag, m_lastDiag);
@@ -205,6 +205,14 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     std::snprintf(m_vBattBuf, sizeof(m_vBattBuf), "%.0f", v.battVolt * 10.0f);
     lv_label_set_text_static(m_vBattLabel, m_vBattBuf);
     lv_obj_set_style_text_color(m_vBattLabel, lv_color_hex(vbColorHex(v)), 0);
+
+    // PW（インジェクターパルス幅）表示
+    std::snprintf(m_pwBuf, sizeof(m_pwBuf), "%.1f", v.pulseWidth);
+    lv_label_set_text_static(m_pwLabel, m_pwBuf);
+
+    // ADV（点火進角）表示
+    std::snprintf(m_advBuf, sizeof(m_advBuf), "%.0f", v.advanceDeg);
+    lv_label_set_text_static(m_advLabel, m_advBuf);
 }
 
 }  // namespace cm::ui
