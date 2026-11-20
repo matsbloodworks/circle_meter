@@ -12,11 +12,13 @@ namespace cm::ui {
 
 namespace {
 
-// 左右 2 分割レイアウト（480x480）
+// 3分割レイアウト（480x480）
 // 左側：EGT、AFR（DSEG7 大型）、Speed（上から順に）
-// 右側：CLT、MAT、MAP、Oil P、Oil T、ISCV duty（垂直配置）
-constexpr int kLeftX  = 70;    // 左側中央 X（さらに左へ）
-constexpr int kRightX = 310;   // 右側中央 X（さらに左へ）
+// 中央：CLT / MAT / OIL T / ISCV
+// 右側：MAP / OIL P / vBatt
+constexpr int kLeftX   = 70;    // 左側中央 X
+constexpr int kCenterX = 240;   // 中央列 X
+constexpr int kRightX  = 400;   // 右側列 X
 
 constexpr int kEgtLabelY   = 100;   // EGT ラベル（上）
 constexpr int kEgtY        = 130;   // EGT 値
@@ -25,8 +27,9 @@ constexpr int kAfrY        = 210;   // AFR（中央）下げた
 constexpr int kSpeedLabelY = 290;   // Speed ラベル
 constexpr int kSpeedY      = 320;   // Speed 値
 
-constexpr int kRightLabelY = 50;    // 右側ラベル Y 開始
-constexpr int kRightStep   = 70;    // 右側データの Y 間隔
+constexpr int kDataStartY  = 50;    // データ開始 Y
+constexpr int kDataOffsetY = 25;    // ラベルからの値のオフセット
+constexpr int kDataStep    = 70;    // データの Y 間隔
 
 constexpr int kAfrWidth    = 200;   // AFR の幅
 constexpr int kDataWidth   = 60;    // 右側データの幅
@@ -79,36 +82,39 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     // SPD値（AFRの右端に合わせる）
     m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, 190, kSpeedY);
 
-    // === 右側：CLT、MAT、MAP、Oil P、Oil T、ISCV duty（垂直配置） ===
-    lv_obj_t* cltTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY);
+    // === 中央列：CLT / MAT / OIL P / ISCV / vBatt ===
+    // CLT
+    lv_obj_t* cltTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kCenterX, kDataStartY);
     lv_label_set_text_static(cltTitleLabel, "CLT");
+    m_cltLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kCenterX, kDataStartY + kDataOffsetY);
 
-    m_cltLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + 25);
-
-    lv_obj_t* matTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep);
+    // MAT（中央）/ MAP（右）
+    lv_obj_t* matTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kCenterX, kDataStartY + kDataStep);
     lv_label_set_text_static(matTitleLabel, "MAT");
+    m_matLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kCenterX, kDataStartY + kDataStep + kDataOffsetY);
 
-    m_matLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep + 25);
-
-    lv_obj_t* mapTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 2);
+    lv_obj_t* mapTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kDataStartY + kDataStep);
     lv_label_set_text_static(mapTitleLabel, "MAP");
+    m_mapLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kDataStartY + kDataStep + kDataOffsetY);
 
-    m_mapLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 2 + 25);
-
-    lv_obj_t* oilPTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 3);
+    // OIL P（中央）/ OIL T（右） - 位置を入れ替え
+    lv_obj_t* oilPTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kCenterX, kDataStartY + kDataStep * 2);
     lv_label_set_text_static(oilPTitleLabel, "OIL P");
+    m_oilPressureLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kCenterX, kDataStartY + kDataStep * 2 + kDataOffsetY);
 
-    m_oilPressureLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 3 + 25);
-
-    lv_obj_t* oilTTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 4);
+    lv_obj_t* oilTTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kDataStartY + kDataStep * 2);
     lv_label_set_text_static(oilTTitleLabel, "OIL T");
+    m_oilTempLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kDataStartY + kDataStep * 2 + kDataOffsetY);
 
-    m_oilTempLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 4 + 25);
-
-    lv_obj_t* iscvTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 5);
+    // ISCV
+    lv_obj_t* iscvTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kCenterX, kDataStartY + kDataStep * 3);
     lv_label_set_text_static(iscvTitleLabel, "ISCV");
+    m_iscvDutyLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kCenterX, kDataStartY + kDataStep * 3 + kDataOffsetY);
 
-    m_iscvDutyLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 5 + 25);
+    // vBatt
+    lv_obj_t* battTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kCenterX, kDataStartY + kDataStep * 4);
+    lv_label_set_text_static(battTitleLabel, "vBatt");
+    m_battVoltLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kCenterX, kDataStartY + kDataStep * 4 + kDataOffsetY);
 
     m_diag = makeLabel(m_root, &cm_font_b612_small, color::kDialDiag, 200, layout::kCx, 450);
     lv_label_set_text_static(m_diag, m_lastDiag);
@@ -173,6 +179,10 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     // ISCV Duty表示
     std::snprintf(m_iscvDutyBuf, sizeof(m_iscvDutyBuf), "%.0f", v.iscvDuty);
     lv_label_set_text_static(m_iscvDutyLabel, m_iscvDutyBuf);
+
+    // Battery Voltage表示
+    std::snprintf(m_battVoltBuf, sizeof(m_battVoltBuf), "%.1f", v.battVoltage);
+    lv_label_set_text_static(m_battVoltLabel, m_battVoltBuf);
 }
 
 }  // namespace cm::ui
