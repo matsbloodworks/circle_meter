@@ -20,7 +20,8 @@ constexpr int kRightX = 310;   // 右側中央 X（さらに左へ）
 
 constexpr int kEgtLabelY   = 100;   // EGT ラベル（上）
 constexpr int kEgtY        = 130;   // EGT 値
-constexpr int kAfrY        = 190;   // AFR（中央）
+constexpr int kAfrLabelY   = 160;   // AFR ラベル
+constexpr int kAfrY        = 210;   // AFR（中央）下げた
 constexpr int kSpeedLabelY = 290;   // Speed ラベル
 constexpr int kSpeedY      = 320;   // Speed 値
 
@@ -62,14 +63,14 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     m_egtNum.create(m_root, &cm_font_b612_egt, kDataWidth, kEgtY);
     lv_obj_set_x(m_egtNum.obj(), 20);  // 左へ移動
 
-    // AFRテキスト（右へシフト）
-    lv_obj_t* afrLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kAfrY - 50);
+    // AFRテキスト（右へシフト、下に移動）
+    lv_obj_t* afrLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kAfrLabelY);
     lv_label_set_text_static(afrLabel, "AFR");
 
     // AFR値（左へシフト、EGT値と同じX位置）
     m_afrNum.create(m_root, &cm_font_dseg7_afr, kAfrWidth, kAfrY);
     m_afrNum.setCellScale('.', 0.6f);  // 小数点を見やすく
-    lv_obj_set_x(m_afrNum.obj(), 20);  // 左へ移動
+    lv_obj_set_x(m_afrNum.obj(), 20);  // 左へ移動（EGT値と同じX位置）
 
     // SPDテキスト（右へシフト）
     m_speedTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX + 30, kSpeedLabelY);
