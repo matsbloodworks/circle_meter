@@ -13,23 +13,23 @@ namespace cm::ui {
 namespace {
 
 // 左右 2 分割レイアウト（480x480）
-// 左側：AFR（DSEG7 大型）、EGT、Speed
+// 左側：EGT、AFR（DSEG7 大型）、Speed（上から順に）
 // 右側：CLT、MAT、MAP、Oil P、Oil T、ISCV duty（垂直配置）
-constexpr int kLeftX  = 120;   // 左側中央 X
-constexpr int kRightX = 360;   // 右側中央 X
+constexpr int kLeftX  = 70;    // 左側中央 X（さらに左へ）
+constexpr int kRightX = 310;   // 右側中央 X（さらに左へ）
 
-constexpr int kAfrY        = 100;   // AFR（大きく）
-constexpr int kEgtLabelY   = 200;   // EGT ラベル
-constexpr int kEgtY        = 230;   // EGT 値
-constexpr int kSpeedLabelY = 310;   // Speed ラベル
-constexpr int kSpeedY      = 340;   // Speed 値
+constexpr int kEgtLabelY   = 100;   // EGT ラベル（上）
+constexpr int kEgtY        = 130;   // EGT 値
+constexpr int kAfrY        = 190;   // AFR（中央）
+constexpr int kSpeedLabelY = 290;   // Speed ラベル
+constexpr int kSpeedY      = 320;   // Speed 値
 
 constexpr int kRightLabelY = 50;    // 右側ラベル Y 開始
 constexpr int kRightStep   = 70;    // 右側データの Y 間隔
 
 constexpr int kAfrWidth    = 200;   // AFR の幅
 constexpr int kDataWidth   = 60;    // 右側データの幅
-constexpr int kLabelWidth  = 70;    // 右側ラベルの幅
+constexpr int kLabelWidth  = 90;    // ラベルの幅（増加：Oil対応）
 
 lv_obj_t* makeLabel(lv_obj_t* parent, const lv_font_t* font, uint32_t hex, int width, int centerX, int centerY) {
     lv_obj_t* l = lv_label_create(parent);
@@ -53,20 +53,20 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     lv_obj_set_style_bg_opa(m_root, LV_OPA_COVER, 0);
     lv_obj_remove_flag(m_root, static_cast<lv_obj_flag_t>(LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE));
 
-    // === 左側：AFR（DSEG7 大型）+ EGT + Speed ===
+    // === 左側：EGT、AFR（DSEG7 大型）、Speed（上から順に） ===
+    m_cltTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kEgtLabelY - 30);
+    lv_label_set_text_static(m_cltTitle, "EGT");
+
+    m_egtNum.create(m_root, &cm_font_b612_egt, kDataWidth, kEgtY);
+
     lv_obj_t* afrLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kAfrY - 50);
     lv_label_set_text_static(afrLabel, "AFR");
 
     m_afrNum.create(m_root, &cm_font_dseg7_afr, kAfrWidth, kAfrY);
     m_afrNum.setCellScale('.', 0.6f);  // 小数点を見やすく
 
-    m_cltTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kEgtLabelY);
-    lv_label_set_text_static(m_cltTitle, "EGT");
-
-    m_egtNum.create(m_root, &cm_font_b612_egt, kDataWidth, kEgtY);
-
     m_speedTitle = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kLeftX, kSpeedLabelY);
-    lv_label_set_text_static(m_speedTitle, "Speed");
+    lv_label_set_text_static(m_speedTitle, "SPD");
 
     m_speedLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kLeftX, kSpeedY);
 
@@ -87,12 +87,12 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     m_mapLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 2 + 25);
 
     lv_obj_t* oilPTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 3);
-    lv_label_set_text_static(oilPTitleLabel, "Oil P");
+    lv_label_set_text_static(oilPTitleLabel, "OIL P");
 
     m_oilPressureLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 3 + 25);
 
     lv_obj_t* oilTTitleLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, kLabelWidth, kRightX, kRightLabelY + kRightStep * 4);
-    lv_label_set_text_static(oilTTitleLabel, "Oil T");
+    lv_label_set_text_static(oilTTitleLabel, "OIL T");
 
     m_oilTempLabel = makeLabel(m_root, &cm_font_b612_egt, color::kText, kDataWidth, kRightX, kRightLabelY + kRightStep * 4 + 25);
 
