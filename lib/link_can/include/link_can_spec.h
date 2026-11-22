@@ -43,6 +43,7 @@ enum FrameNo : uint8_t {
 constexpr float kTempOffsetC        = 50.0f;     ///< ECT / IAT / Oil Temp / Fuel Temp の Offset
 constexpr float kBaroScaleKpa       = 0.1f;      ///< BAP ×10
 constexpr float kDutyScalePct       = 0.1f;      ///< Injector Duty ×10
+constexpr float kTpsScalePct        = 0.1f;      ///< TPS (Main) ×10
 constexpr float kInjPwScaleMs       = 0.001f;    ///< Injection Actual PW ×1000
 constexpr float kBattScaleV         = 0.01f;     ///< Batt Voltage ×100
 constexpr float kIgnOffsetRaw       = 1000.0f;   ///< Ignition Angle の Offset

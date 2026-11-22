@@ -132,4 +132,12 @@ private:
     bool m_initialized = false;
 };
 
+// ---------------------------------------------------------------- 圧力
+constexpr float kKpaPerKgfCm2 = 98.0665f;  ///< 1 kgf/cm2 = 98.0665 kPa
+
+/// ECU が送る kPa を M面の表示単位 kgf/cm2 にする
+constexpr float kpaToKgfCm2(float kpa) {
+    return kpa / kKpaPerKgfCm2;
+}
+
 }  // namespace cm

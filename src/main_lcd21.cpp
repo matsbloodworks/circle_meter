@@ -121,22 +121,37 @@ void simTask(void*) {
         const SweepOutput o = sim.step(g_simHold.load() ? 0 : now - last);
         last                = now;
         // SYS-03: λ は WBO から。実機の WBO と同じく、有効な λ・状態（正常）・温度を配信する
-        g_store.update(SignalId::WboLambda, o.lambda, now);
+        // 動的デモ：o.lambda から AFR 11～16 を計算
+        const float afr = 11.0f + (16.0f - 11.0f) * (o.lambda - SweepSim::kLambdaLo) / (SweepSim::kLambdaHi - SweepSim::kLambdaLo);
+        g_store.update(SignalId::WboLambda, afr / 14.7f, now);
         g_store.update(SignalId::WboValid, 1.0f, now);
         g_store.update(SignalId::WboStatus, 2.0f, now);
         g_store.update(SignalId::WboTempC, 780.0f, now);
-        g_store.update(SignalId::Egt1, o.egtC, now);
-        g_store.update(SignalId::Rpm, o.rpm, now);
-        g_store.update(SignalId::VehicleSpeed, o.vss, now);
-        // 右列のデモ値を時間に応じて変動させる
-        const float phase = (now % 10000) / 10000.0f * 6.28f;  // 10秒周期
-        g_store.update(SignalId::Clt, 0.0f + 120.0f * (0.5f + 0.5f * sinf(phase)), now);  // 0-120℃
-        g_store.update(SignalId::Iat, 20.0f + 15.0f * (0.5f + 0.5f * sinf(phase + 1.0f)), now);  // MAT
-        g_store.update(SignalId::Map, 40.0f + 20.0f * (0.5f + 0.5f * sinf(phase + 2.0f)), now);
-        g_store.update(SignalId::OilPressure, 2.0f + 2.0f * (0.5f + 0.5f * sinf(phase + 3.0f)), now);
-        g_store.update(SignalId::OilTemp, 90.0f + 30.0f * (0.5f + 0.5f * sinf(phase + 4.0f)), now);  // 60-120
-        g_store.update(SignalId::IdlePosition, 5.0f + 15.0f * (0.5f + 0.5f * sinf(phase + 5.0f)), now);  // ISCV duty
-        g_store.update(SignalId::BattVolt, 12.0f + 1.0f * (0.5f + 0.5f * sinf(phase + 6.0f)), now);  // vBatt 11-13
+        // EGT 200～650°C
+        const float egt = 200.0f + (650.0f - 200.0f) * (o.lambda - SweepSim::kLambdaLo) / (SweepSim::kLambdaHi - SweepSim::kLambdaLo);
+        g_store.update(SignalId::Egt1, egt, now);
+        g_store.update(SignalId::Rpm, 8000.0f, now);  // RPM固定8000回転
+        // SPD 0～200km/h
+        const float spd = (o.vss / (SweepSim::kVssHi - SweepSim::kVssLo)) * 200.0f;
+        g_store.update(SignalId::VehicleSpeed, spd, now);
+        // 右列のデモ値を動的に
+        const float ratio = (o.lambda - SweepSim::kLambdaLo) / (SweepSim::kLambdaHi - SweepSim::kLambdaLo);
+        g_store.update(SignalId::Clt, 50.0f + ratio * 60.0f, now);  // CLT 50～110°C
+        g_store.update(SignalId::Iat, 10.0f + ratio * 40.0f, now);  // MAT 10～50°C
+        g_store.update(SignalId::Map, 30.0f + ratio * 70.0f, now);  // MAP 30～100kPa
+        // OIL_P 1.0～5.0kgf/cm2。ECU と同じく kPa で入れる（表示側で kgf/cm2 に換算する）
+        g_store.update(SignalId::OilPressure, (1.0f + ratio * 4.0f) * kKpaPerKgfCm2, now);
+        g_store.update(SignalId::Tps, ratio * 100.0f, now);  // TPS 0～100%
+        g_store.update(SignalId::Baro, 101.0f, now);         // BARO 101kPa
+        g_store.update(SignalId::OilTemp, 50.0f + ratio * 80.0f, now);  // OIL_T 50～130°C
+        g_store.update(SignalId::IdlePosition, 5.0f + ratio * 20.0f, now);  // ISCV duty 5～25%
+        g_store.update(SignalId::BattVolt, 11.0f + ratio * 3.0f, now);  // BAT 11.0～14.0V
+        const float pulseWidthMs = 1.0f + ratio * 7.0f;  // PW 1.0～8.0ms
+        g_store.update(SignalId::InjPulseMs, pulseWidthMs, now);
+        // INJ duty (%)計算: RPM 8000, 周期 7.5ms (4-stroke)
+        const float injDuty = (pulseWidthMs / 7.5f) * 100.0f;  // duty = (PW / period) * 100
+        g_store.update(SignalId::InjDuty, injDuty, now);
+        g_store.update(SignalId::IgnitionTiming, 5.0f + ratio * 25.0f, now);  // ADV 5～30deg
     }
 }
 #endif
@@ -358,7 +373,13 @@ void setup() {
 
     // 本画面を最初の 1 フレームまで描いてからバックライトを戻す（黒画面の一瞬を見せない）
     g_splash.onHide();
+#ifdef CM_ENABLE_CAN_SIM
+    // シミュレーターモード時は M面（新データページ）を起動
+    g_active = &g_data;
+    g_active->onShow();
+#else
     activatePage(g_cfg.dialStyle);
+#endif
     Serial.printf("dial style: %s\n", g_active->id());
     pump(150);
     fadeBacklight(0, target, kMainFadeInMs);

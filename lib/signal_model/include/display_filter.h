@@ -43,8 +43,14 @@ struct DisplayValues {
     float tpsPercent  = 0.0f;  ///< スロットル開度 (%)
     float pulseWidth  = 0.0f;  ///< インジェクターパルス幅 (ms)
     float advanceDeg  = 0.0f;  ///< 点火進角 (deg)
+    float baroKpa     = 0.0f;  ///< 大気圧 (kPa)
+    float oilPressKgfCm2 = 0.0f;  ///< オイル圧力 (kgf/cm2)。M面の表示用（ECU は kPa で送る）
     // Speed
     float speedKmh    = 0.0f;  ///< 速度
+    // 各値が Lost でないか（SYS-41 / RSK-01: false のときは値を出さず "--" を出す）
+    bool hasClt = false, hasMat = false, hasMap = false, hasOilP = false, hasOilT = false;
+    bool hasIscv = false, hasBatt = false, hasTps = false, hasPw = false, hasAdv = false;
+    bool hasBaro = false, hasSpeed = false;
 };
 
 class DisplayFilter {
@@ -101,19 +107,22 @@ public:
             m_egtSeeded = false;
         }
 
-        snap.get(SignalId::Clt, v.cltC);
+        v.hasClt   = snap.get(SignalId::Clt, v.cltC);
         snap.get(SignalId::Iat, v.iatC);
-        snap.get(SignalId::VehicleSpeed, v.speedKmh);
-        snap.get(SignalId::Iat, v.matC);  // MAT は IAT と同じ値を使用
-        snap.get(SignalId::Map, v.mapKpa);
-        snap.get(SignalId::OilPressure, v.oilPressure);
-        snap.get(SignalId::OilTemp, v.oilTempC);
-        snap.get(SignalId::IdlePosition, v.iscvDuty);  // ISCV duty = Idle Position
-        snap.get(SignalId::BattVolt, v.battVolt);
-        snap.get(SignalId::InjPulseMs, v.pulseWidth);
-        snap.get(SignalId::IgnitionTiming, v.advanceDeg);
-        // TPS はシステムにまだ実装されていないため、デモ値を使用
-        v.tpsPercent = 20.0f;
+        v.hasSpeed = snap.get(SignalId::VehicleSpeed, v.speedKmh);
+        v.hasMat   = snap.get(SignalId::Iat, v.matC);  // MAT は IAT と同じ値を使用
+        v.hasMap   = snap.get(SignalId::Map, v.mapKpa);
+        v.hasOilP  = snap.get(SignalId::OilPressure, v.oilPressure);
+        if (v.hasOilP) {
+            v.oilPressKgfCm2 = kpaToKgfCm2(v.oilPressure);
+        }
+        v.hasOilT  = snap.get(SignalId::OilTemp, v.oilTempC);
+        v.hasIscv  = snap.get(SignalId::IdlePosition, v.iscvDuty);  // ISCV duty = Idle Position
+        v.hasBatt  = snap.get(SignalId::BattVolt, v.battVolt);
+        v.hasPw    = snap.get(SignalId::InjPulseMs, v.pulseWidth);
+        v.hasAdv   = snap.get(SignalId::IgnitionTiming, v.advanceDeg);
+        v.hasTps   = snap.get(SignalId::Tps, v.tpsPercent);  // rusEFI はまだ送らない（"--"）
+        v.hasBaro  = snap.get(SignalId::Baro, v.baroKpa);
 
         return v;
     }

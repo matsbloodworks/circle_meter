@@ -57,7 +57,7 @@ uint32_t egtColorHex(const DisplayValues& v, bool blinkOn) {
     }
     // 温度値ベースの色変化: 500以上で赤、400以上で黄色
     if (v.egtC >= 500.0f) {
-        return blinkOn ? 0xFF3333 : 0x552222;  // 赤（点滅）
+        return 0xFF3333;  // 赤
     }
     if (v.egtC >= 400.0f) {
         return 0xFFDD00;  // 黄色
@@ -92,8 +92,11 @@ uint32_t spdColorHex(const DisplayValues& v) {
 }
 
 uint32_t cltColorHex(const DisplayValues& v) {
-    if (v.cltC >= 100.0f) {
+    if (v.cltC >= 105.0f) {
         return 0xFF3333;  // 赤
+    }
+    if (v.cltC >= 95.0f) {
+        return 0xFFDD00;  // 黄色
     }
     if (v.cltC <= 60.0f) {
         return 0x33BBFF;  // 青
@@ -117,6 +120,9 @@ uint32_t oilTempColorHex(const DisplayValues& v) {
     }
     if (v.oilTempC >= 105.0f) {
         return 0xFFDD00;  // 黄色
+    }
+    if (v.oilTempC <= 60.0f) {
+        return 0x33BBFF;  // 青
     }
     return color::kText;  // 白
 }

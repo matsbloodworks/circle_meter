@@ -25,23 +25,35 @@ private:
 
     BigNumber m_egtNum;
     BigNumber m_afrNum;
-
-    lv_obj_t* m_speedLabel = nullptr;
-    lv_obj_t* m_cltLabel = nullptr;
-    lv_obj_t* m_iatLabel = nullptr;
-    lv_obj_t* m_matLabel = nullptr;
-    lv_obj_t* m_mapLabel = nullptr;
-    lv_obj_t* m_oilPressureLabel = nullptr;
-    lv_obj_t* m_oilTempLabel = nullptr;
-    lv_obj_t* m_iscvDutyLabel = nullptr;
-    lv_obj_t* m_vBattLabel = nullptr;
-    lv_obj_t* m_tpsLabel = nullptr;
-    lv_obj_t* m_pwLabel = nullptr;
-    lv_obj_t* m_advLabel = nullptr;
+    BigNumber m_speedNum;
+    BigNumber m_tpsNum;
+    BigNumber m_cltNum;
+    BigNumber m_oilPNum;
+    BigNumber m_oilTNum;
+    BigNumber m_mapNum;
+    BigNumber m_matNum;
+    BigNumber m_iscvNum;
+    BigNumber m_vBattNum;
+    BigNumber m_pwNum;
+    BigNumber m_advNum;
+    BigNumber m_baroNum;
 
     lv_obj_t* m_speedTitle = nullptr;
     lv_obj_t* m_cltTitle = nullptr;
     lv_obj_t* m_iatTitle = nullptr;
+
+    // 右側の2列5行ラベル参照（色変更用）
+    lv_obj_t* m_tpsTitleLabel = nullptr;
+    lv_obj_t* m_iscvTitleLabel = nullptr;
+    lv_obj_t* m_mapTitleLabel = nullptr;
+    lv_obj_t* m_matTitleLabel = nullptr;
+    lv_obj_t* m_oilPTitleLabel = nullptr;
+    lv_obj_t* m_oilTTitleLabel = nullptr;
+    lv_obj_t* m_pwTitleLabel = nullptr;
+    lv_obj_t* m_advTitleLabel = nullptr;
+    lv_obj_t* m_vBattTitleLabel = nullptr;
+    lv_obj_t* m_spdTitleLabel = nullptr;
+    lv_obj_t* m_cltTitleLabel = nullptr;
 
     char m_speedBuf[16]{};
     char m_cltBuf[16]{};
@@ -55,11 +67,17 @@ private:
     char m_tpsBuf[16]{};
     char m_pwBuf[16]{};
     char m_advBuf[16]{};
+    char m_baroBuf[16]{};
 
     lv_obj_t* m_diag = nullptr;
     DisplayFilter m_filter;
 
     char m_lastDiag[24]{};
+    lv_obj_t* m_rusEfiLabel = nullptr;
+    lv_obj_t* m_mbwLabel = nullptr;
+    lv_obj_t* m_topBar = nullptr;
+    uint32_t m_blinkTimer = 0;
+    bool m_blinkState = true;
 };
 
 }  // namespace cm::ui

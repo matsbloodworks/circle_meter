@@ -820,6 +820,35 @@ void test_UT21_lpf_and_stale_and_levels() {
     TEST_ASSERT_TRUE(v2.lambdaStale);
 }
 
+// SYS-41 / RSK-01: 届いていない値は has = false（M面は "--" を出す）。油圧は kPa -> kgf/cm2
+void test_UT21_missing_values_and_oil_pressure_unit() {
+    SignalStore store;
+    DisplayFilter f;
+    const Config cfg = defaultConfig();
+    DisplayValues v = f.update(store.snapshot(1000), cfg);
+    TEST_ASSERT_FALSE(v.hasClt);
+    TEST_ASSERT_FALSE(v.hasBatt);
+    TEST_ASSERT_FALSE(v.hasTps);
+    TEST_ASSERT_FALSE(v.hasBaro);
+    TEST_ASSERT_FALSE(v.hasIscv);
+    TEST_ASSERT_FALSE(v.hasEgt);
+
+    store.update(SignalId::OilPressure, 392.266f, 1000);  // 4.0 kgf/cm2
+    store.update(SignalId::Tps, 55.0f, 1000);
+    store.update(SignalId::Baro, 100.5f, 1000);
+    v = f.update(store.snapshot(1000), cfg);
+    TEST_ASSERT_TRUE(v.hasOilP);
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, 4.0f, v.oilPressKgfCm2);
+    TEST_ASSERT_TRUE(v.hasTps);
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, 55.0f, v.tpsPercent);
+    TEST_ASSERT_TRUE(v.hasBaro);
+    TEST_ASSERT_FLOAT_WITHIN(1e-3f, 100.5f, v.baroKpa);
+
+    v = f.update(store.snapshot(1000 + kLostAfterMs + 10), cfg);  // 途絶したら無し
+    TEST_ASSERT_FALSE(v.hasOilP);
+    TEST_ASSERT_FALSE(v.hasTps);
+}
+
 // ---------------------------------------------------------------- UT-23
 // SWR-29: λ センサの状態判定の優先順位（λ・状態・温度は WBO。SYS-03 / DEC-11）
 void test_UT23_no_wbo_frames() {
@@ -1084,6 +1113,7 @@ int main(int, char**) {
     RUN_TEST(test_UT21_lost_gives_no_value);
     RUN_TEST(test_UT21_recovery_does_not_glide_from_old_value);
     RUN_TEST(test_UT21_lpf_and_stale_and_levels);
+    RUN_TEST(test_UT21_missing_values_and_oil_pressure_unit);
     RUN_TEST(test_UT23_no_wbo_frames);
     RUN_TEST(test_UT23_valid_lambda_is_ok);
     RUN_TEST(test_UT23_wbo_states_with_temperature);

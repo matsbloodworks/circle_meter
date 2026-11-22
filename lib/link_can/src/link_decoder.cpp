@@ -69,6 +69,7 @@ DecodeResult LinkDecoder::decode(uint32_t id, const uint8_t* d, uint8_t dlc, uin
             if (baroKpa >= kBaroMinValidKpa) {
                 push(r, SignalId::Baro, baroKpa);
             }
+            push(r, SignalId::Tps, raw(d, kOffB) * kTpsScalePct);
             push(r, SignalId::InjDuty, raw(d, kOffC) * kDutyScalePct);
             break;
         }

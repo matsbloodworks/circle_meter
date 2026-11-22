@@ -82,6 +82,7 @@ void test_UT26_scaling() {
     frame(d, kFrmBapTpsDuty, 1013, 500, 456);
     r = dec.decode(kId, d, 8, kId);
     expect(r, SignalId::Baro, 101.3f);
+    expect(r, SignalId::Tps, 50.0f);
     expect(r, SignalId::InjDuty, 45.6f);
 
     frame(d, kFrmPwEct, 0, 3250, 132);  // PW 3.25 ms、ECT 82 °C

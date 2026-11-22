@@ -62,7 +62,7 @@ G4X は PCLink に表示されている単位のまま送るため、**PCLink �
 | | | 4–5 | MAP | ×1 | 0 | kPa | ● `Map` |
 | | | 6–7 | MGP | ×1 | 100 | kPa | ○ |
 | 1 | Frame 2 | 2–3 | BAP | ×10 | 0 | kPa | ● `Baro` |
-| | | 4–5 | TPS (Main) | ×10 | 0 | % | ○ |
+| | | 4–5 | TPS (Main) | ×10 | 0 | % | ● `Tps` |
 | | | 6–7 | Injector Duty Cycle | ×10 | 0 | % | ● `InjDuty` |
 | 2 | Frame 3 | 2–3 | Injector Duty Cycle (Sec) | ×10 | 0 | % | ○ |
 | | | 4–5 | Injection Actual PW | ×1000 | 0 | ms | ● `InjPulseMs` |

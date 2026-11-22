@@ -45,6 +45,7 @@ enum class SignalId : uint8_t {
     FuelEcoAvg,      ///< 平均燃費 [km/L]
     InjPulseMs,      ///< 燃料噴射のパルス幅 [ms]（BASE+5 Fueling の fuel_pulse）
     InjTiming,       ///< 燃料噴射のタイミング [deg]（BASE+13。ECU の Lua が送る）
+    Tps,             ///< スロットル開度 [%]（2026-11-22 追加。Link G4X の TPS (Main): DOC-14 §3）
     COUNT
 };
 

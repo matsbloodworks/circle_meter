@@ -11,3 +11,5 @@ extern const lv_font_t cm_font_b612_scale;  // 28 px / A: 目盛り数字
 extern const lv_font_t cm_font_b612_label;  // 22 px / A: 銘板・NO SIGNAL
 extern const lv_font_t cm_font_b612_small;  // 14 px / A: 小さい銘板・診断
 extern const lv_font_t cm_font_dseg7_afr;  // 70 px / A: 主数値 AFR（DSEG7）
+extern const lv_font_t cm_font_dseg7_egt_spd;  // 38 px / M面 EGT/SPD（DSEG7、2px大きく）
+extern const lv_font_t cm_font_dseg7_data;  // 34 px / M面 右側データ（DSEG7）

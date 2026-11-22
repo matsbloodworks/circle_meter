@@ -50,6 +50,8 @@ FONTS = [
     ("cm_font_b612_small", 14, ASCII, "A: 小さい銘板・診断", B612_REG),
     # DSEG7Classic（デジタル7セグメント）
     ("cm_font_dseg7_afr", 70, DIGITS, "A: 主数値 AFR（DSEG7）", DSEG7_BOLD),
+    ("cm_font_dseg7_egt_spd", 38, DIGITS, "M面 EGT/SPD（DSEG7、2px大きく）", DSEG7_BOLD),
+    ("cm_font_dseg7_data", 34, DIGITS, "M面 右側データ（DSEG7）", DSEG7_BOLD),
 ]
 
 
