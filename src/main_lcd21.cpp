@@ -365,7 +365,12 @@ void setup() {
     // SWR-106: 走行距離を復元し、オドの初期値が変わっていれば反映する
     {
         const DistanceRecord r = g_distStore.load();
+#ifdef CM_ENABLE_CAN_SIM
+        // デモは桁の多い値から始めて、表示の幅（丸い画面の下端）を確かめられるようにする
+        g_dist.restore(123456000u, 123400u);  // ODO 123456 km / TRIP 123.4 km
+#else
         g_dist.restore(r.odoM, 0);  // トリップは電源を入れるたびに 0 から（タッチが使えないため。SWR-106）
+#endif
         g_distSeedKm = r.seedKm;
 #ifdef USER_ODO_START_KM
         if (g_dist.applySeed(USER_ODO_START_KM, r.seedKm)) {

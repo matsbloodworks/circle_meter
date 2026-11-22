@@ -202,8 +202,14 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     m_spdTitleLabel = m_speedTitle;
 
     // SWR-106: 下部に走行距離（丸い画面の下端でも収まるよう、この高さで幅 330 px まで）
-    m_distLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, 330, layout::kCx, 418);
-    lv_label_set_text_static(m_distLabel, m_lastDist);
+    // ODO と TRIP は別のラベルにして、間の幅を 1 px 単位で決められるようにする（等幅フォントの空白は約 13 px）
+    m_odoLabel  = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, 160, layout::kCx, 423);
+    m_tripLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, 160, layout::kCx, 423);
+    lv_obj_set_width(m_odoLabel, LV_SIZE_CONTENT);
+    lv_obj_set_width(m_tripLabel, LV_SIZE_CONTENT);
+    lv_label_set_text_static(m_odoLabel, m_lastOdo);
+    lv_label_set_text_static(m_tripLabel, m_lastTrip);
+    m_distGapPx = 2 * lv_text_get_width(" ", 1, &cm_font_b612_label, 0) - 5;
 
     m_diag = makeLabel(m_root, &cm_font_b612_small, color::kDialDiag, 200, layout::kCx, 450);
     lv_label_set_text_static(m_diag, m_lastDiag);
@@ -216,7 +222,7 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     lv_label_set_text_static(m_rusEfiLabel,
                              cfg.ecuType == static_cast<uint8_t>(EcuType::Link) ? "LINK G4X" : "RUSEFI");
     lv_label_set_long_mode(m_rusEfiLabel, LV_LABEL_LONG_CLIP);  // 折り返し無効
-    lv_obj_set_pos(m_rusEfiLabel, 375, 190);  // 右に10px移動
+    lv_obj_set_pos(m_rusEfiLabel, 375, 200);  // 右に10px、下に10px移動
     lv_obj_set_width(m_rusEfiLabel, 150);  // 幅を広くして1行に表示
     lv_obj_set_style_transform_angle(m_rusEfiLabel, 2700, 0);  // 90度回転（2700 = 270 * 10）
     lv_obj_set_style_transform_pivot_x(m_rusEfiLabel, 75, 0);
@@ -240,11 +246,23 @@ void PageData::setLabel(lv_obj_t* label, char* last, size_t size, const char* te
 }
 
 void PageData::setDistance(uint32_t odoM, uint32_t tripM) {
-    char buf[sizeof(m_lastDist)];
-    // ODO は整数 km、TRIP は 0.1 km（float を使わず整数で丸めなしに切り捨てる）
-    std::snprintf(buf, sizeof(buf), "ODO %lu  TRIP %lu.%lu", static_cast<unsigned long>(odoM / 1000u),
-                  static_cast<unsigned long>(tripM / 1000u), static_cast<unsigned long>((tripM % 1000u) / 100u));
-    setLabel(m_distLabel, m_lastDist, sizeof(m_lastDist), buf);
+    char odo[sizeof(m_lastOdo)];
+    char trip[sizeof(m_lastTrip)];
+    // ODO は整数 km、TRIP は 0.1 km（float を使わず整数で切り捨てる）
+    std::snprintf(odo, sizeof(odo), "ODO %lu", static_cast<unsigned long>(odoM / 1000u));
+    std::snprintf(trip, sizeof(trip), "TRIP %lu.%lu", static_cast<unsigned long>(tripM / 1000u),
+                  static_cast<unsigned long>((tripM % 1000u) / 100u));
+    if (std::strncmp(odo, m_lastOdo, sizeof(odo)) == 0 && std::strncmp(trip, m_lastTrip, sizeof(trip)) == 0) {
+        return;  // DEC-08: 変わらなければ描き直さない
+    }
+    setLabel(m_odoLabel, m_lastOdo, sizeof(m_lastOdo), odo);
+    setLabel(m_tripLabel, m_lastTrip, sizeof(m_lastTrip), trip);
+    // 2 つを m_distGapPx 空けて並べ、組全体を画面の中央にそろえる
+    const int32_t wOdo  = lv_text_get_width(m_lastOdo, std::strlen(m_lastOdo), &cm_font_b612_label, 0);
+    const int32_t wTrip = lv_text_get_width(m_lastTrip, std::strlen(m_lastTrip), &cm_font_b612_label, 0);
+    const int32_t x0    = layout::kCx - (wOdo + m_distGapPx + wTrip) / 2;
+    lv_obj_set_x(m_odoLabel, x0);
+    lv_obj_set_x(m_tripLabel, x0 + wOdo + m_distGapPx);
 }
 
 void PageData::setDiagText(const char* text) {

@@ -24,8 +24,11 @@ private:
     void setLabel(lv_obj_t* label, char* last, size_t size, const char* text);
 
     lv_obj_t* m_root = nullptr;
-    lv_obj_t* m_distLabel = nullptr;
-    char m_lastDist[40]{};
+    lv_obj_t* m_odoLabel  = nullptr;  ///< SWR-106: "ODO 123456"
+    lv_obj_t* m_tripLabel = nullptr;  ///< SWR-106: "TRIP 123.4"
+    char m_lastOdo[20]{};
+    char m_lastTrip[20]{};
+    int32_t m_distGapPx = 0;  ///< ODO と TRIP の間（空白 2 文字分 - 5 px）
 
     BigNumber m_egtNum;
     BigNumber m_afrNum;
