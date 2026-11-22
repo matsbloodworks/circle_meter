@@ -76,10 +76,8 @@ private:
     char m_advBuf[16]{};
     char m_baroBuf[16]{};
 
-    lv_obj_t* m_diag = nullptr;
     DisplayFilter m_filter;
 
-    char m_lastDiag[24]{};
     lv_obj_t* m_rusEfiLabel = nullptr;
     lv_obj_t* m_mbwLabel = nullptr;
     lv_obj_t* m_topBar = nullptr;

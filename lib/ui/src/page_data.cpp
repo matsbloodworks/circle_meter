@@ -78,7 +78,7 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     m_mbwLabel = lv_label_create(m_root);
     lv_obj_set_style_text_font(m_mbwLabel, &cm_font_b612_label, 0);
     lv_obj_set_style_text_color(m_mbwLabel, lv_color_hex(0x888888), 0);  // グレー色
-    lv_label_set_text_static(m_mbwLabel, "Hirai-special");  // 車名（B612 Mono 22px で約 170px）
+    lv_label_set_text_static(m_mbwLabel, "Hirai-spl");  // 車名（B612 Mono 22px で約 120px）
     lv_obj_set_style_text_align(m_mbwLabel, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_width(m_mbwLabel, 240);
     lv_obj_set_pos(m_mbwLabel, layout::kCx - 120, 20);  // 真ん中上部
@@ -211,8 +211,6 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     lv_label_set_text_static(m_tripLabel, m_lastTrip);
     m_distGapPx = 2 * lv_text_get_width(" ", 1, &cm_font_b612_label, 0) - 5;
 
-    m_diag = makeLabel(m_root, &cm_font_b612_small, color::kDialDiag, 200, layout::kCx, 450);
-    lv_label_set_text_static(m_diag, m_lastDiag);
 
     // === rusEFI テキスト（右端に90度傾けて配置）===
     m_rusEfiLabel = lv_label_create(m_root);
@@ -266,7 +264,9 @@ void PageData::setDistance(uint32_t odoM, uint32_t tripM) {
 }
 
 void PageData::setDiagText(const char* text) {
-    setLabel(m_diag, m_lastDiag, sizeof(m_lastDiag), text != nullptr ? text : "");
+    // M面には fps などの診断文字を出さない（描画の間隔を値ごとに変えたので、fps の数字は意味が薄い）。
+    // 計測値はシリアルに 1 秒ごとに出ている
+    (void)text;
 }
 
 void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
@@ -275,12 +275,11 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
 
     m_updateCounter++;
 
-    const bool updateFast = true;                  // 毎フレーム
     const bool update200ms = (m_updateCounter % 8) == 0;   // 200ms ごと（8フレーム = 200ms）
     const bool update500ms = (m_updateCounter % 20) == 0;  // 500ms ごと（20フレーム = 500ms）
 
-    // AFR表示（DSEG7）毎フレーム更新（リアルタイム必要）
-    if (updateFast) {
+    // AFR表示（DSEG7）200ms ごと更新（数字が読める速さに落とす。LPF は毎フレーム動いている）
+    if (update200ms) {
         formatMain(buf, sizeof(buf), v, cfg);
         uint32_t afrColor = color::kText;
         float afr = 0.0f;
