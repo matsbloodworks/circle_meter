@@ -99,4 +99,8 @@
 // Link の CAN ID（PCLink の CAN Setup → Mode → Channel の ID (decimal)）。既定 1000
 // #define USER_LINK_CAN_ID 1000
 
+// オドメーターの初期値（km）。今の車のメーターの距離を入れる。値を変えて書き込んだときだけ反映され、
+// 同じ値のまま書き込み直しても積算した距離は消えない（SWR-106）
+// #define USER_ODO_START_KM 123456
+
 // 起動ロゴは user フォルダに logo.png を置いて変換します（docs/user/06_logo.md）
