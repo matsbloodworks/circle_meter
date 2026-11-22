@@ -83,6 +83,7 @@
 | `UT-24` | `SWR-67` | `test/test_signal_model/` |
 | `UT-25` | `SWR-51`,`SWR-68` | `test/test_signal_model/` |
 | `UT-26` | `SWR-103`,`SWR-105` | `test/test_link_can/` |
+| `UT-27` | `SWR-100` | `test/test_signal_model/` |
 | `IT-01`-`IT-15` | `DOC-30 §3` 参照 | 実機手順 |
 | `QT-01`-`QT-11` | `DOC-30 §4` 参照 | 実機・実車手順 |
 

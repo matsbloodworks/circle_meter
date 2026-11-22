@@ -24,6 +24,8 @@
 #include "page_needle.h"
 #include "page_splash.h"
 #include "signal_store.h"
+#include "drive_sim.h"
+#include "rusefi_can_spec.h"
 #include "sweep_sim.h"
 #include "user_config_log.h"
 #include "user_overrides.h"
@@ -142,7 +144,8 @@ std::atomic<float> g_simSeek{-1.0f};
 // SWR-100: 実 CAN の代わりに λ / EGT をスイープする。20 Hz で SignalStore を更新する（rusEFI の 50 ms
 // 周期相当）
 void simTask(void*) {
-    SweepSim sim;
+    // SWR-100: 実走を模したデモ（DriveSim。始動 -> 暖機 -> 加速 -> 巡航 -> 減速 -> 停車 を繰り返す）
+    DriveSim sim;
     uint32_t last = millis();
     for (;;) {
         vTaskDelay(pdMS_TO_TICKS(50));
@@ -152,40 +155,33 @@ void simTask(void*) {
             sim.seek(seek);
         }
         // 停止中も dt = 0 で現在値を配信し続ける（止めると鮮度が落ちて STALE/LOST になってしまう）
-        const SweepOutput o = sim.step(g_simHold.load() ? 0 : now - last);
+        const DriveOutput o = sim.step(g_simHold.load() ? 0 : now - last);
         last                = now;
-        // SYS-03: λ は WBO から。実機の WBO と同じく、有効な λ・状態（正常）・温度を配信する
-        // 動的デモ：o.lambda から AFR 11～16 を計算
-        const float afr = 11.0f + (16.0f - 11.0f) * (o.lambda - SweepSim::kLambdaLo) / (SweepSim::kLambdaHi - SweepSim::kLambdaLo);
-        g_store.update(SignalId::WboLambda, afr / 14.7f, now);
-        g_store.update(SignalId::WboValid, 1.0f, now);
-        g_store.update(SignalId::WboStatus, 2.0f, now);
-        g_store.update(SignalId::WboTempC, 780.0f, now);
-        // EGT 200～650°C
-        const float egt = 200.0f + (650.0f - 200.0f) * (o.lambda - SweepSim::kLambdaLo) / (SweepSim::kLambdaHi - SweepSim::kLambdaLo);
-        g_store.update(SignalId::Egt1, egt, now);
-        g_store.update(SignalId::Rpm, 8000.0f, now);  // RPM固定8000回転
-        // SPD 0～200km/h
-        const float spd = (o.vss / (SweepSim::kVssHi - SweepSim::kVssLo)) * 200.0f;
-        g_store.update(SignalId::VehicleSpeed, spd, now);
-        // 右列のデモ値を動的に
-        const float ratio = (o.lambda - SweepSim::kLambdaLo) / (SweepSim::kLambdaHi - SweepSim::kLambdaLo);
-        g_store.update(SignalId::Clt, 50.0f + ratio * 60.0f, now);  // CLT 50～110°C
-        g_store.update(SignalId::Iat, 10.0f + ratio * 40.0f, now);  // MAT 10～50°C
-        g_store.update(SignalId::Map, 30.0f + ratio * 70.0f, now);  // MAP 30～100kPa
-        // OIL_P 1.0～5.0kgf/cm2。ECU と同じく kPa で入れる（表示側で kgf/cm2 に換算する）
-        g_store.update(SignalId::OilPressure, (1.0f + ratio * 4.0f) * kKpaPerKgfCm2, now);
-        g_store.update(SignalId::Tps, ratio * 100.0f, now);  // TPS 0～100%
-        g_store.update(SignalId::Baro, 101.0f, now);         // BARO 101kPa
-        g_store.update(SignalId::OilTemp, 50.0f + ratio * 80.0f, now);  // OIL_T 50～130°C
-        g_store.update(SignalId::IdlePosition, 5.0f + ratio * 20.0f, now);  // ISCV duty 5～25%
-        g_store.update(SignalId::BattVolt, 11.0f + ratio * 3.0f, now);  // BAT 11.0～14.0V
-        const float pulseWidthMs = 1.0f + ratio * 7.0f;  // PW 1.0～8.0ms
-        g_store.update(SignalId::InjPulseMs, pulseWidthMs, now);
-        // INJ duty (%)計算: RPM 8000, 周期 7.5ms (4-stroke)
-        const float injDuty = (pulseWidthMs / 7.5f) * 100.0f;  // duty = (PW / period) * 100
-        g_store.update(SignalId::InjDuty, injDuty, now);
-        g_store.update(SignalId::IgnitionTiming, 5.0f + ratio * 25.0f, now);  // ADV 5～30deg
+        // SYS-03: λ は WBO から。実機の WBO と同じく、ヒーターが温まるまでは Valid = 0（加熱中）
+        g_store.update(SignalId::WboValid, o.wboValid ? 1.0f : 0.0f, now);
+        g_store.update(SignalId::WboStatus,
+                       static_cast<float>(static_cast<uint8_t>(
+                           o.wboValid ? rusefi::WboStatus::RunningClosedLoop : rusefi::WboStatus::Warmup)),
+                       now);
+        g_store.update(SignalId::WboTempC, o.wboValid ? 780.0f : 400.0f, now);
+        if (o.wboValid) {
+            g_store.update(SignalId::WboLambda, o.lambda, now);
+        }
+        g_store.update(SignalId::Egt1, o.egtC, now);
+        g_store.update(SignalId::Rpm, o.rpm, now);
+        g_store.update(SignalId::VehicleSpeed, o.speedKmh, now);
+        g_store.update(SignalId::Tps, o.tpsPct, now);
+        g_store.update(SignalId::Map, o.mapKpa, now);
+        g_store.update(SignalId::Baro, o.baroKpa, now);
+        g_store.update(SignalId::Clt, o.cltC, now);
+        g_store.update(SignalId::Iat, o.iatC, now);
+        g_store.update(SignalId::OilTemp, o.oilTempC, now);
+        g_store.update(SignalId::OilPressure, o.oilPressKpa, now);  // kPa（表示側で kgf/cm2 に換算）
+        g_store.update(SignalId::BattVolt, o.battV, now);
+        g_store.update(SignalId::InjPulseMs, o.injPulseMs, now);
+        g_store.update(SignalId::InjDuty, o.injDutyPct, now);
+        g_store.update(SignalId::IgnitionTiming, o.ignAdvDeg, now);
+        g_store.update(SignalId::IdlePosition, o.iscvPct, now);
     }
 }
 #endif

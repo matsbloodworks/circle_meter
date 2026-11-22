@@ -1,5 +1,5 @@
 // SWE.4 ユニット検証: 信号モデル（鮮度・単位換算・設定）
-// UT-05 〜 UT-09, UT-11 〜 UT-21, UT-23 〜 UT-25  (docs/30_test_strategy.md §2)
+// UT-05 〜 UT-09, UT-11 〜 UT-21, UT-23 〜 UT-25, UT-27  (docs/30_test_strategy.md §2)
 #include <unity.h>
 
 #include <atomic>
@@ -10,6 +10,7 @@
 #include <string>
 #include <thread>
 
+#include "drive_sim.h"
 #include "button_fsm.h"
 #include "config.h"
 #include "display_filter.h"
@@ -1059,6 +1060,90 @@ void test_UT25_small_buffer_does_not_overflow() {
     formatSensorStatus(nullptr, 0, LambdaSensorInfo{LambdaSensorState::NoSignal, false, 0});  // 落ちないこと
 }
 
+// ---------------------------------------------------------------- UT-27 実走デモ（SWR-100 / DriveSim）
+namespace {
+/// 50 ms 刻みで untilMs まで進める（実機の simTask と同じ周期）
+DriveOutput runTo(DriveSim& sim, uint32_t untilMs) {
+    DriveOutput o = sim.step(0);
+    while (sim.timeMs() + 50 <= untilMs) {
+        o = sim.step(50);
+    }
+    return o;
+}
+}  // namespace
+
+void test_UT27_start_sequence() {
+    DriveSim sim;
+    DriveOutput o = sim.step(0);  // キー ON
+    TEST_ASSERT_FALSE(o.engineRunning);
+    TEST_ASSERT_EQUAL_FLOAT(0.0f, o.rpm);
+    TEST_ASSERT_FALSE(o.wboValid);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 12.5f, o.battV);
+
+    o = runTo(sim, 3000);  // クランキング: 電圧が下がる
+    TEST_ASSERT_FALSE(o.engineRunning);
+    TEST_ASSERT_TRUE(o.rpm > 100.0f);
+    TEST_ASSERT_TRUE(o.battV < 11.5f);
+
+    o = runTo(sim, 6000);  // 始動後: 充電電圧、λ はまだ加熱中
+    TEST_ASSERT_TRUE(o.engineRunning);
+    TEST_ASSERT_TRUE(o.battV > 13.5f);
+    TEST_ASSERT_FALSE(o.wboValid);
+    TEST_ASSERT_TRUE(o.iscvPct > 30.0f);  // 冷間はアイドル制御弁を大きく開く
+
+    o = runTo(sim, 20000);  // 暖機後のアイドル: λ 有効、水温が上がっている
+    TEST_ASSERT_TRUE(o.wboValid);
+    TEST_ASSERT_TRUE(o.cltC > 40.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.02f, 1.0f, o.lambda);
+}
+
+void test_UT27_drive_and_loop() {
+    DriveSim sim;
+    DriveOutput o = runTo(sim, 37000);  // 3 速 全開
+    TEST_ASSERT_TRUE(o.rpm > 6500.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.5f, 100.0f, o.tpsPct);
+    TEST_ASSERT_TRUE(o.speedKmh > 120.0f);
+    TEST_ASSERT_TRUE(o.egtC > 500.0f);
+    TEST_ASSERT_TRUE(o.lambda < 0.85f);  // 全開は濃い
+
+    o = runTo(sim, 38000);  // 燃料カット: 噴射 0、薄い
+    TEST_ASSERT_EQUAL_FLOAT(0.0f, o.injPulseMs);
+    TEST_ASSERT_TRUE(o.lambda > 1.3f);
+
+    // 全区間で値が範囲内（デューティ 100 % 未満、油圧は回転とともに）
+    DriveSim s2;
+    float maxDuty = 0.0f;
+    for (uint32_t t = 0; t < 2 * DriveSim::kEndMs; t += 50) {
+        const DriveOutput d = s2.step(50);
+        TEST_ASSERT_TRUE(d.injDutyPct >= 0.0f && d.injDutyPct < 100.0f);
+        TEST_ASSERT_TRUE(d.cltC >= 20.0f && d.cltC < 110.0f);
+        if (d.engineRunning) {
+            TEST_ASSERT_TRUE(d.oilPressKpa > 50.0f);
+        }
+        maxDuty = d.injDutyPct > maxDuty ? d.injDutyPct : maxDuty;
+    }
+    TEST_ASSERT_TRUE(maxDuty > 50.0f);
+
+    // 最後まで行くと暖機後のアイドルへ戻る（冷えた状態からやり直さない）
+    TEST_ASSERT_TRUE(s2.timeMs() >= DriveSim::kLoopStartMs && s2.timeMs() <= DriveSim::kEndMs);
+    const DriveOutput after = s2.step(0);
+    TEST_ASSERT_TRUE(after.wboValid);
+    TEST_ASSERT_TRUE(after.cltC > 70.0f);
+}
+
+void test_UT27_hold_and_seek() {
+    DriveSim sim;
+    const DriveOutput a = runTo(sim, 30000);
+    const DriveOutput b = sim.step(0);  // 停止中は同じ値
+    TEST_ASSERT_EQUAL_FLOAT(a.rpm, b.rpm);
+    TEST_ASSERT_EQUAL_FLOAT(a.cltC, b.cltC);
+    sim.seek(0.0f);
+    TEST_ASSERT_EQUAL_UINT32(0, sim.timeMs());
+    sim.seek(1.0f);
+    TEST_ASSERT_EQUAL_UINT32(DriveSim::kEndMs, sim.timeMs());
+}
+
+
 int main(int, char**) {
     UNITY_BEGIN();
     RUN_TEST(test_UT05_zone_boundaries_exact);
@@ -1127,5 +1212,8 @@ int main(int, char**) {
     RUN_TEST(test_UT25_texts_match_hmi_spec);
     RUN_TEST(test_UT25_temperature_and_degree_suffix);
     RUN_TEST(test_UT25_small_buffer_does_not_overflow);
+    RUN_TEST(test_UT27_start_sequence);
+    RUN_TEST(test_UT27_drive_and_loop);
+    RUN_TEST(test_UT27_hold_and_seek);
     return UNITY_END();
 }
