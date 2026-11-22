@@ -78,10 +78,10 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     m_mbwLabel = lv_label_create(m_root);
     lv_obj_set_style_text_font(m_mbwLabel, &cm_font_b612_label, 0);
     lv_obj_set_style_text_color(m_mbwLabel, lv_color_hex(0x888888), 0);  // グレー色
-    lv_label_set_text_static(m_mbwLabel, "M B W");
+    lv_label_set_text_static(m_mbwLabel, "Hirai-special");  // 車名（B612 Mono 22px で約 170px）
     lv_obj_set_style_text_align(m_mbwLabel, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_width(m_mbwLabel, 100);
-    lv_obj_set_pos(m_mbwLabel, layout::kCx - 50, 20);  // 真ん中上部
+    lv_obj_set_width(m_mbwLabel, 240);
+    lv_obj_set_pos(m_mbwLabel, layout::kCx - 120, 20);  // 真ん中上部
 
     // === M B W の下にバー（画面を横断） ===
     m_topBar = lv_obj_create(m_root);
@@ -210,7 +210,7 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     lv_obj_set_style_text_color(m_rusEfiLabel, lv_color_hex(0xFF8800), 0);  // オレンジ
     // SWR-104: 受信している ECU の名前を出す
     lv_label_set_text_static(m_rusEfiLabel,
-                             cfg.ecuType == static_cast<uint8_t>(EcuType::Link) ? "LINK" : "RUSEFI");
+                             cfg.ecuType == static_cast<uint8_t>(EcuType::Link) ? "LINK G4X" : "RUSEFI");
     lv_label_set_long_mode(m_rusEfiLabel, LV_LABEL_LONG_CLIP);  // 折り返し無効
     lv_obj_set_pos(m_rusEfiLabel, 375, 190);  // 右に10px移動
     lv_obj_set_width(m_rusEfiLabel, 150);  // 幅を広くして1行に表示

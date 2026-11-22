@@ -8,7 +8,7 @@ extern const lv_font_t cm_font_egt;  // 76 px / 排気温度（例 845°C）
 extern const lv_font_t cm_font_b612_main;  // 70 px / A: 主数値（例 14.2 / 1.000）
 extern const lv_font_t cm_font_b612_egt;  // 34 px / A: 排気温度（例 712°C）
 extern const lv_font_t cm_font_b612_scale;  // 28 px / A: 目盛り数字
-extern const lv_font_t cm_font_b612_label;  // 22 px / A: 銘板・NO SIGNAL
+extern const lv_font_t cm_font_b612_label;  // 22 px / A: 銘板・NO SIGNAL・M面の車名
 extern const lv_font_t cm_font_b612_small;  // 14 px / A: 小さい銘板・診断
 extern const lv_font_t cm_font_dseg7_afr;  // 70 px / A: 主数値 AFR（DSEG7）
 extern const lv_font_t cm_font_dseg7_egt_spd;  // 38 px / M面 EGT/SPD（DSEG7、2px大きく）
