@@ -6,7 +6,7 @@
 | プロセス | SYS.3（外部インタフェース定義） |
 | 版 | 0.1 (Draft) |
 | 最終更新 | 2026-11-22 |
-| 一次情報源 | 作者の車両の PCLink（G4X）の CAN Setup 画面（Stream 1 の Frame 1–14 と Mode タブ。2026-11-22 に画面で確認） |
+| 一次情報源 | Link G4X の車両（@junna6ce）の PCLink（G4X）の CAN Setup 画面（Stream 1 の Frame 1–14 と Mode タブ。2026-11-22 に画面で確認） |
 
 Link G4X の ECU から受信するときのフレーム定義（`SYS-63`）。rusEFI のときの定義は `DOC-13`。
 どちらを使うかはビルド時の設定で選ぶ（`SWR-104`）。**本機は送信しない**（`SYS-07`。rusEFI と同じ）。
@@ -18,7 +18,7 @@ Link G4X の ECU から受信するときのフレーム定義（`SYS-63`）。r
 | 項目 | 値 | 備考 |
 |---|---|---|
 | 規格 | ISO 11898-2 High-Speed CAN | |
-| ビットレート | **500 kbps**（作者の車両の PCLink の設定） | PCLink: CAN Setup → Mode → Bit Rate。本機の `USER_CAN_BITRATE_KBPS` と一致させる |
+| ビットレート | **500 kbps**（Link G4X の車両（@junna6ce）の PCLink の設定） | PCLink: CAN Setup → Mode → Bit Rate。本機の `USER_CAN_BITRATE_KBPS` と一致させる |
 | ID 形式 | **11 bit 標準 ID**（PCLink の Format = Normal） | Extended は扱わない |
 | ID | **1000（`0x3E8`）**（既定。PCLink の Channel の CAN ID） | 本機の `USER_LINK_CAN_ID` で変えられる |
 | 全フレーム DLC | 8 バイト固定 | |
@@ -29,11 +29,11 @@ Link G4X の ECU から受信するときのフレーム定義（`SYS-63`）。r
 
 | 場所 | 設定 | 備考 |
 |---|---|---|
-| CAN Setup → Mode → CAN Module | 本機をつなぐポート（作者の車両は CAN 1） | |
+| CAN Setup → Mode → CAN Module | 本機をつなぐポート（Link G4X の車両（@junna6ce）は CAN 1） | |
 | 同 → Mode | User Defined | |
 | 同 → Bit Rate | 500 kbit/s | |
-| 同 → Data → Channel 1 | **Transmit User Stream 1**、ID 1000、Format Normal | 2026-11-22 時点で作者の車両は全 Channel が OFF（何も送っていない） |
-| 同 → Streams → Stream 1 | §2 の Generic Dash 形式（Frame 1–14） | 作者の車両には入っている |
+| 同 → Data → Channel 1 | **Transmit User Stream 1**、ID 1000、Format Normal | 2026-11-22 時点で Link G4X の車両（@junna6ce）は全 Channel が OFF（何も送っていない） |
+| 同 → Streams → Stream 1 | §2 の Generic Dash 形式（Frame 1–14） | Link G4X の車両（@junna6ce）には入っている |
 | 送信周期 | **20 Hz 以上** | 鮮度切れの判定（500 ms。`SYS-40`）に余裕を持たせる |
 
 ## 2. フレームの形式（Generic Dash 形式の多重化フレーム）
@@ -49,10 +49,10 @@ Link G4X の ECU から受信するときのフレーム定義（`SYS-63`）。r
 | 6–7 | 値 C（uint16 LE） |
 
 PCLink は **生値 = 表示値 × Multiplier ÷ Divider + Offset** を整数に切り捨てて送る。
-G4X は PCLink に表示されている単位のまま送るため、**PCLink の単位は °C・kPa・km/h にしておく**（作者の車両はこの設定。2026-11-22 確認）。
+G4X は PCLink に表示されている単位のまま送るため、**PCLink の単位は °C・kPa・km/h にしておく**（Link G4X の車両（@junna6ce）はこの設定。2026-11-22 確認）。
 本機は逆算して **表示値 = (生値 − Offset) × Divider ÷ Multiplier** とする。
 
-## 3. フレーム一覧（作者の車両の Stream 1）
+## 3. フレーム一覧（Link G4X の車両（@junna6ce）の Stream 1）
 
 「本機」の列: ● = 表示に使う / ○ = 受信するが使わない。
 
@@ -123,7 +123,7 @@ Width は 16、Byte Order は LS First、Type は Unsigned（Frame 1–14 と同
 
 ### 4.3 車速
 
-作者の車両の車速はトランスミッションの速度計用センサから取っている。PCLink でそのセンサが
+Link G4X の車両（@junna6ce）の車速はトランスミッションの速度計用センサから取っている。PCLink でそのセンサが
 LF / LR / RF / RR のどの Wheel Speed に割り当てられているかは車両ごとに違うため、
 **4 つのうち最大の値を車速とする**（使っていない車輪は 0 が送られる）。
 番号 8 と 9 のどちらかを受けるたびに、直近の 4 値から最大値を出す。

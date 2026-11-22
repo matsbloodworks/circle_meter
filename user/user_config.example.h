@@ -93,7 +93,7 @@
 // #define USER_CAN_BASE_ID 0x200
 
 // ECU の種類: USER_ECU_RUSEFI（既定）/ USER_ECU_LINK（Link G4X。PCLink の Generic Dash 形式。docs/14_ICD_link_can.md）
-// Link のときは通信速度も PCLink の Bit Rate に合わせる（作者の車両は 500）
+// Link のときは通信速度も PCLink の Bit Rate に合わせる（Link G4X の車両（@junna6ce）は 500）
 // #define USER_ECU_TYPE USER_ECU_LINK
 
 // Link の CAN ID（PCLink の CAN Setup → Mode → Channel の ID (decimal)）。既定 1000

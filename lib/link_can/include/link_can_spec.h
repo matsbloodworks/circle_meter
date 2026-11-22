@@ -1,6 +1,6 @@
 // SWR-103: Link G4X の Generic Dash 形式のフレーム定義とスケーリング定数
 //
-// 一次情報源: 作者の車両の PCLink（G4X）の CAN Setup → Streams → Stream 1（2026-11-22 確認）。
+// 一次情報源: Link G4X の車両（@junna6ce）の PCLink（G4X）の CAN Setup → Streams → Stream 1（2026-11-22 確認）。
 // 仕様の詳細は docs/14_ICD_link_can.md を参照。PCLink の Stream 1 を変えたら本ヘッダと DOC-14 を同時に更新する。
 // スケーリング値をコード中に直書きしないこと（SWD-01 と同じ規則）。
 //
