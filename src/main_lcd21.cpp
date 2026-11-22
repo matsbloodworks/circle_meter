@@ -59,20 +59,31 @@ ui::IPage* g_active = nullptr;
 
 DisplayPage g_currentPage = DisplayPage::M_Face;
 
-/// SYS-21: 設定の表示デザインに対応するページ。両方とも起動時に作ってあり、切替は表示/非表示だけ（規則 5）
-ui::IPage* pageForStyle(uint8_t style) {
-    return (style == static_cast<uint8_t>(DialStyle::Ring)) ? static_cast<ui::IPage*>(&g_lambda)
-                                                            : static_cast<ui::IPage*>(&g_needle);
-}
+// タッチ入力管理
+bool g_touchPressed = false;
+uint32_t g_touchStartTime = 0;
+constexpr uint32_t kTapTimeoutMs = 500;  // タップと判定する最大押下時間
 
-void activatePage(uint8_t style) {
-    ui::IPage* next = pageForStyle(style);
-    if (g_active != nullptr && g_active != next) {
-        g_active->onHide();
+// タッチ入力をポーリングしてタップイベントを生成
+void pollTouchInput() {
+    int x, y;
+    bool touching = g_display.readTouch(x, y);
+
+    if (touching && !g_touchPressed) {
+        // タッチ開始
+        g_touchPressed = true;
+        g_touchStartTime = millis();
+        Serial.printf("touch: start at (%d, %d)\n", x, y);
+    } else if (!touching && g_touchPressed) {
+        // タッチ終了 - タップと判定
+        uint32_t duration = millis() - g_touchStartTime;
+        Serial.printf("touch: end, duration=%u ms\n", duration);
+        if (duration < kTapTimeoutMs && g_active != nullptr) {
+            Serial.printf("tap detected - toggle page\n");
+            g_active->onEvent(InputEvent::Tap);
+        }
+        g_touchPressed = false;
     }
-    g_active = next;
-    g_active->onShow();
-    g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
 }
 
 }  // namespace
@@ -233,23 +244,6 @@ void handleDebugKeys() {
             g_simSeek = static_cast<float>(c - '0') / 9.0f;
             g_simHold = true;
             Serial.printf("sim: hold at %c/9\n", c);
-        } else if (c == 'v') {
-            // SYS-21: 表示デザインの切替（タッチ入力の実装前の暫定操作）
-            const uint8_t n = static_cast<uint8_t>(DialStyle::Count);
-            g_cfg.dialStyle = static_cast<uint8_t>((g_cfg.dialStyle + 1) % n);
-            activatePage(g_cfg.dialStyle);
-            Serial.printf("dial style: %s\n", g_active->id());
-        } else if (c == 'c') {
-            // C面（古いゲージ）への切り替え
-            if (g_active != &g_lambda && g_active != &g_needle) {
-                if (g_active != nullptr) {
-                    g_active->onHide();
-                }
-                g_active = &g_lambda;  // 古いC面を表示
-                g_active->onShow();
-                g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
-                Serial.printf("page: C面 (%s)\n", g_active->id());
-            }
         } else if (c == 't') {
             // タップでページ切り替え
             if (g_active != nullptr) {
@@ -401,40 +395,14 @@ void setup() {
 
     // 本画面を最初の 1 フレームまで描いてからバックライトを戻す（黒画面の一瞬を見せない）
     g_splash.onHide();
-#ifdef CM_ENABLE_CAN_SIM
-    // シミュレーターモード時は M面（新データページ）を起動
+    // 2026-11-22: M面（データページ）だけを使う。C面（リング / 指針式）は表示しない
     g_active = &g_data;
     g_active->onShow();
-#else
-    activatePage(g_cfg.dialStyle);
-#endif
+    g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
     Serial.printf("dial style: %s\n", g_active->id());
     pump(150);
     fadeBacklight(0, target, kMainFadeInMs);
 
-    // タッチパネルでの C面 ⇔ M面 切り替え
-    lv_obj_add_flag(g_port.screen(), LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_add_event_cb(
-        g_port.screen(),
-        [](lv_event_t* e) {
-            if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
-            if (g_active == &g_data) {
-                // M面 → C面
-                g_active->onHide();
-                g_active = &g_lambda;
-                g_active->onShow();
-                Serial.printf("touch: C面 (%s)\n", g_active->id());
-            } else {
-                // C面 → M面
-                g_active->onHide();
-                g_active = &g_data;
-                g_active->onShow();
-                Serial.printf("touch: M面 (%s)\n", g_active->id());
-            }
-            g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
-        },
-        LV_EVENT_CLICKED,
-        nullptr);
 
     g_uiReady = true;
     printUiReady();
@@ -456,6 +424,7 @@ void loop() {
     }
 
     handleDebugKeys();
+    pollTouchInput();
     const uint32_t wait = g_port.service();
 
     if (static_cast<int32_t>(now - nextStatMs) >= 0) {

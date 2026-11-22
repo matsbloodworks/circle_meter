@@ -9,7 +9,6 @@
 #include "theme.h"
 
 // ページ切り替え用の外部関数（main_lcd21.cpp で定義）
-extern void toggleDisplayPage();
 
 namespace cm::ui {
 
@@ -486,10 +485,8 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
 }
 
 bool PageData::onEvent(InputEvent ev) {
-    if (ev == InputEvent::Tap) {
-        toggleDisplayPage();
-        return true;  // イベントを消費した
-    }
+    // 2026-11-22: M面だけを使う（C面へは切り替えない）。タップは何もしない
+    (void)ev;
     return false;
 }
 
