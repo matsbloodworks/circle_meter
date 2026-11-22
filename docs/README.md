@@ -20,6 +20,7 @@
 | 3 | [DOC-11 システム要求](11_SYS2_system_req.md) | SYS.2 | 「何を作るか」を数値で。リスク・ハザード分析、未解決事項 |
 | 4 | [DOC-12 システムアーキテクチャ](12_SYS3_system_arch.md) | SYS.3 | HW 構成、GPIO 割当、HW/SW 機能配分、主要な設計判断 |
 | 5 | [DOC-13 rusEFI CAN ICD](13_ICD_rusefi_can.md) | SYS.3 | **CAN フレームのバイト単位の定義**。実装の一次資料 |
+| 5b | [DOC-14 Link G4X CAN ICD](14_ICD_link_can.md) | SYS.3 | Link G4X（Generic Dash 形式）のフレーム定義と PCLink の設定 |
 | 6 | [DOC-20 ソフトウェア要求](20_SWE1_software_req.md) | SWE.1 | ソフトウェアが満たすべきこと |
 | 7 | [DOC-21 ソフトウェアアーキテクチャ](21_SWE2_software_arch.md) | SWE.2 | レイヤ構成、描画ライブラリ選定、タスク設計、遅延バジェット |
 | 8 | [DOC-22 詳細設計](22_SWE3_detailed_design.md) | SWE.3 | 公開 API の契約と状態遷移 |
