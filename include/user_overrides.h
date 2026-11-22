@@ -100,6 +100,11 @@ static_assert(USER_ECU_TYPE == USER_ECU_RUSEFI || USER_ECU_TYPE == USER_ECU_LINK
 static_assert(USER_LINK_CAN_ID >= 0 && USER_LINK_CAN_ID <= 0x7FF,
               "USER_LINK_CAN_ID は 0〜2047 で指定してください（PCLink の既定は 1000）");
 #endif
+#ifdef USER_ODO_START_KM
+// SWR-106: オドメーターの初期値。値を変えたときだけ反映する（毎回の起動で積算した距離を消さない）
+static_assert(USER_ODO_START_KM >= 0 && USER_ODO_START_KM <= 999999,
+              "USER_ODO_START_KM は 0〜999999（km）で指定してください");
+#endif
 
 // 色は 0xRRGGBB。theme.h が USER_COLOR_* を読む（DOC-23 §8.1）
 #define CM_USER_COLOR_OK(c) ((c) >= 0 && (c) <= 0xFFFFFF)

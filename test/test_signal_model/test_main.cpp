@@ -1,5 +1,5 @@
 // SWE.4 ユニット検証: 信号モデル（鮮度・単位換算・設定）
-// UT-05 〜 UT-09, UT-11 〜 UT-21, UT-23 〜 UT-25, UT-27  (docs/30_test_strategy.md §2)
+// UT-05 〜 UT-09, UT-11 〜 UT-21, UT-23 〜 UT-25, UT-27, UT-28  (docs/30_test_strategy.md §2)
 #include <unity.h>
 
 #include <atomic>
@@ -10,6 +10,7 @@
 #include <string>
 #include <thread>
 
+#include "distance_meter.h"
 #include "drive_sim.h"
 #include "button_fsm.h"
 #include "config.h"
@@ -1144,6 +1145,73 @@ void test_UT27_hold_and_seek() {
 }
 
 
+// ---------------------------------------------------------------- UT-28 走行距離（SWR-106 / DistanceMeter）
+void test_UT28_integrates_speed() {
+    DistanceMeter d;
+    for (int i = 0; i < 36000 / 25; ++i) {  // 100 km/h で 36 秒（UI と同じ 25 ms 周期）
+        d.update(true, 100.0f, 25);
+    }
+    TEST_ASSERT_UINT32_WITHIN(2, 1000, d.odoM());
+    TEST_ASSERT_UINT32_WITHIN(2, 1000, d.tripM());
+}
+
+void test_UT28_lost_speed_and_dt_cap() {
+    DistanceMeter d;
+    d.update(false, 100.0f, 1000);  // 車速なし: 増えない
+    TEST_ASSERT_EQUAL_UINT32(0, d.odoM());
+    d.update(true, 36.0f, 5000);  // 10 m/s。5 秒止まっていても 1 秒分だけ
+    TEST_ASSERT_EQUAL_UINT32(10, d.odoM());
+}
+
+void test_UT28_large_odo_keeps_small_steps() {
+    DistanceMeter d;
+    d.restore(199999000u, 0);  // 199,999 km
+    for (int i = 0; i < 400; ++i) {
+        d.update(true, 36.0f, 25);  // 0.25 m ずつ、計 100 m
+    }
+    TEST_ASSERT_UINT32_WITHIN(1, 199999100u, d.odoM());
+}
+
+void test_UT28_trip_reset_and_save_rules() {
+    DistanceMeter d;
+    d.restore(5000, 2500);
+    TEST_ASSERT_FALSE(d.shouldSave());
+    d.resetTrip();
+    TEST_ASSERT_EQUAL_UINT32(0, d.tripM());
+    TEST_ASSERT_EQUAL_UINT32(5000, d.odoM());  // オドは変わらない
+    TEST_ASSERT_FALSE(d.shouldSave());         // トリップは保存しないので書き込まない
+
+    for (int i = 0; i < 40; ++i) {
+        d.update(true, 36.0f, 1000);  // 400 m
+    }
+    TEST_ASSERT_FALSE(d.shouldSave());
+    for (int i = 0; i < 10; ++i) {
+        d.update(true, 36.0f, 1000);  // 計 500 m
+    }
+    TEST_ASSERT_TRUE(d.shouldSave());
+    d.markSaved();
+
+    d.update(true, 36.0f, 1000);  // 10 m 走って停車
+    d.update(true, 0.0f, 1000);
+    TEST_ASSERT_FALSE(d.shouldSave());  // 停車 1 秒ではまだ
+    d.update(true, 0.0f, 1000);
+    TEST_ASSERT_TRUE(d.shouldSave());  // 停車 2 秒で保存
+    d.markSaved();
+    d.update(true, 0.0f, 5000);
+    TEST_ASSERT_FALSE(d.shouldSave());  // 未保存が無ければ停車中も書かない
+}
+
+void test_UT28_seed_applied_only_when_changed() {
+    DistanceMeter d;
+    d.restore(1234567, 100);
+    TEST_ASSERT_FALSE(d.applySeed(120000, 120000));  // 前回と同じ値: そのまま
+    TEST_ASSERT_EQUAL_UINT32(1234567, d.odoM());
+    TEST_ASSERT_TRUE(d.applySeed(130000, 120000));  // 値を変えた: 入れ直す
+    TEST_ASSERT_EQUAL_UINT32(130000000u, d.odoM());
+    TEST_ASSERT_EQUAL_UINT32(100, d.tripM());  // トリップは触らない
+    TEST_ASSERT_TRUE(d.shouldSave());
+}
+
 int main(int, char**) {
     UNITY_BEGIN();
     RUN_TEST(test_UT05_zone_boundaries_exact);
@@ -1215,5 +1283,10 @@ int main(int, char**) {
     RUN_TEST(test_UT27_start_sequence);
     RUN_TEST(test_UT27_drive_and_loop);
     RUN_TEST(test_UT27_hold_and_seek);
+    RUN_TEST(test_UT28_integrates_speed);
+    RUN_TEST(test_UT28_lost_speed_and_dt_cap);
+    RUN_TEST(test_UT28_large_odo_keeps_small_steps);
+    RUN_TEST(test_UT28_trip_reset_and_save_rules);
+    RUN_TEST(test_UT28_seed_applied_only_when_changed);
     return UNITY_END();
 }

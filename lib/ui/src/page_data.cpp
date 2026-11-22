@@ -201,6 +201,10 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     // SPDラベル
     m_spdTitleLabel = m_speedTitle;
 
+    // SWR-106: 下部に走行距離（丸い画面の下端でも収まるよう、この高さで幅 330 px まで）
+    m_distLabel = makeLabel(m_root, &cm_font_b612_label, color::kDialSmall, 330, layout::kCx, 418);
+    lv_label_set_text_static(m_distLabel, m_lastDist);
+
     m_diag = makeLabel(m_root, &cm_font_b612_small, color::kDialDiag, 200, layout::kCx, 450);
     lv_label_set_text_static(m_diag, m_lastDiag);
 
@@ -233,6 +237,14 @@ void PageData::setLabel(lv_obj_t* label, char* last, size_t size, const char* te
     }
     std::snprintf(last, size, "%s", text);
     lv_label_set_text_static(label, last);
+}
+
+void PageData::setDistance(uint32_t odoM, uint32_t tripM) {
+    char buf[sizeof(m_lastDist)];
+    // ODO は整数 km、TRIP は 0.1 km（float を使わず整数で丸めなしに切り捨てる）
+    std::snprintf(buf, sizeof(buf), "ODO %lu  TRIP %lu.%lu", static_cast<unsigned long>(odoM / 1000u),
+                  static_cast<unsigned long>(tripM / 1000u), static_cast<unsigned long>((tripM % 1000u) / 100u));
+    setLabel(m_distLabel, m_lastDist, sizeof(m_lastDist), buf);
 }
 
 void PageData::setDiagText(const char* text) {

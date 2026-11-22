@@ -16,6 +16,8 @@
 #include "config.h"
 #include "display_hal.h"
 #include "display_policy.h"
+#include "distance_meter.h"
+#include "distance_store.h"
 #include "input_event.h"
 #include "lambda_sensor_state.h"
 #include "lvgl_port.h"
@@ -60,6 +62,26 @@ ui::PageData g_data;      // データページ（新デザイン）
 ui::IPage* g_active = nullptr;
 
 DisplayPage g_currentPage = DisplayPage::M_Face;
+
+// SWR-106: 走行距離（オド・トリップ）
+DistanceMeter g_dist;
+DistanceStore g_distStore;
+uint32_t g_distSeedKm = 0xFFFFFFFFu;  ///< 反映済みの USER_ODO_START_KM（保存値と一緒に書く）
+uint32_t g_distLastMs = 0;
+
+void saveDistance() {
+    const DistanceRecord r{g_dist.odoM(), g_distSeedKm};
+    if (g_distStore.save(r)) {
+        g_dist.markSaved();
+    } else {
+        Serial.println("distance: save FAILED");
+    }
+}
+
+void resetTrip() {
+    g_dist.resetTrip();
+    Serial.println("distance: trip reset");
+}
 
 // タッチ入力管理
 bool g_touchPressed = false;
@@ -232,6 +254,10 @@ void handleDebugKeys() {
             reprintBootInfo();
             continue;
         }
+        if (c == 'r') {  // SWR-106: トリップを 0 に戻す（試験用。通常は電源を入れるたびに 0）
+            resetTrip();
+            continue;
+        }
 #ifdef CM_ENABLE_CAN_SIM
         if (c == 'h') {
             g_simHold = !g_simHold.load();
@@ -335,6 +361,24 @@ void setup() {
 #endif
     // SWR-67 / SWD-14: user/user_config.h の値を重ねる（範囲外の組は既定値のまま）
     g_userResult = applyUserConfig(g_cfg, userConfigFromBuild());
+
+    // SWR-106: 走行距離を復元し、オドの初期値が変わっていれば反映する
+    {
+        const DistanceRecord r = g_distStore.load();
+        g_dist.restore(r.odoM, 0);  // トリップは電源を入れるたびに 0 から（タッチが使えないため。SWR-106）
+        g_distSeedKm = r.seedKm;
+#ifdef USER_ODO_START_KM
+        if (g_dist.applySeed(USER_ODO_START_KM, r.seedKm)) {
+            g_distSeedKm = USER_ODO_START_KM;
+            saveDistance();
+            Serial.printf("distance: odo set to %lu km (USER_ODO_START_KM)\n",
+                          static_cast<unsigned long>(USER_ODO_START_KM));
+        }
+#endif
+        Serial.printf("distance: odo %lu km trip %lu.%lu km\n", static_cast<unsigned long>(g_dist.odoM() / 1000u),
+                      static_cast<unsigned long>(g_dist.tripM() / 1000u),
+                      static_cast<unsigned long>((g_dist.tripM() % 1000u) / 100u));
+    }
     printBanner();
 
     // バックライト OFF のまま初期化する（DOC-23 §7）
@@ -416,7 +460,17 @@ void loop() {
         if (static_cast<int32_t>(now - nextUiMs) >= 0) {
             nextUiMs = now + kUiPeriodMs;
         }
-        g_active->onUpdate(g_store.snapshot(now), g_cfg);
+        const Snapshot snap = g_store.snapshot(now);
+        // SWR-106: 車速を積算する（Lost の間は積算しない）
+        float speedKmh      = 0.0f;
+        const bool hasSpeed = snap.get(SignalId::VehicleSpeed, speedKmh);
+        g_dist.update(hasSpeed, speedKmh, g_distLastMs == 0 ? 0 : now - g_distLastMs);
+        g_distLastMs = now;
+        if (g_dist.shouldSave()) {
+            saveDistance();
+        }
+        g_data.setDistance(g_dist.odoM(), g_dist.tripM());
+        g_active->onUpdate(snap, g_cfg);
     }
 
     handleDebugKeys();

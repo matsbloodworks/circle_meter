@@ -17,11 +17,15 @@ public:
     void onUpdate(const Snapshot& snap, const Config& cfg) override;
     bool onEvent(InputEvent ev) override;
     void setDiagText(const char* text) override;
+    /// SWR-106: 走行距離（m）。変わったときだけ文字を描き直す（DEC-08）
+    void setDistance(uint32_t odoM, uint32_t tripM);
 
 private:
     void setLabel(lv_obj_t* label, char* last, size_t size, const char* text);
 
     lv_obj_t* m_root = nullptr;
+    lv_obj_t* m_distLabel = nullptr;
+    char m_lastDist[40]{};
 
     BigNumber m_egtNum;
     BigNumber m_afrNum;
