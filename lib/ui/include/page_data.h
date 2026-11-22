@@ -85,6 +85,7 @@ private:
     lv_obj_t* m_topBar = nullptr;
     uint32_t m_blinkTimer = 0;
     bool m_blinkState = true;
+    uint32_t m_updateCounter = 0;  ///< onUpdate の回数（25 ms 周期）。温度系 200 ms / その他 500 ms ごとに描く
 };
 
 }  // namespace cm::ui

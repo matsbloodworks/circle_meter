@@ -273,224 +273,274 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
     const DisplayValues v = m_filter.update(snap, cfg);
     char buf[16];
 
-    // AFR表示（DSEG7）13.5以上で黄色、14.7以上で赤
-    formatMain(buf, sizeof(buf), v, cfg);
-    uint32_t afrColor = color::kText;
-    float afr = 0.0f;
-    if (v.hasLambda) {
-        afr = cfg.showAfr ? lambdaToAfr(v.lambda, cfg.stoich) : v.lambda;
-        if (cfg.showAfr && afr >= 14.7f) {
-            afrColor = 0xFF3333;  // 赤
-        } else if (cfg.showAfr && afr >= 13.5f) {
-            afrColor = 0xFFDD00;  // 黄色
+    m_updateCounter++;
+
+    const bool updateFast = true;                  // 毎フレーム
+    const bool update200ms = (m_updateCounter % 8) == 0;   // 200ms ごと（8フレーム = 200ms）
+    const bool update500ms = (m_updateCounter % 20) == 0;  // 500ms ごと（20フレーム = 500ms）
+
+    // AFR表示（DSEG7）毎フレーム更新（リアルタイム必要）
+    if (updateFast) {
+        formatMain(buf, sizeof(buf), v, cfg);
+        uint32_t afrColor = color::kText;
+        float afr = 0.0f;
+        if (v.hasLambda) {
+            afr = cfg.showAfr ? lambdaToAfr(v.lambda, cfg.stoich) : v.lambda;
+            if (cfg.showAfr && afr >= 14.7f) {
+                afrColor = 0xFF3333;  // 赤
+            } else if (cfg.showAfr && afr >= 13.5f) {
+                afrColor = 0xFFDD00;  // 黄色
+            }
         }
+        m_afrNum.setText(buf, afrColor);
     }
-    m_afrNum.setText(buf, afrColor);
 
-    // EGT表示（DSEG7 36px）400以上で黄色、500以上で赤
-    formatOr(buf, sizeof(buf), v.hasEgt, "%.0f", v.egtC);
-    uint32_t egtColor = color::kText;
-    if (!v.hasEgt) {
-        // 値なし: 白のまま
-    } else if (v.egtC >= 500.0f) {
-        egtColor = 0xFF3333;  // 赤
-    } else if (v.egtC >= 400.0f) {
-        egtColor = 0xFFDD00;  // 黄色
-    }
-    m_egtNum.setText(buf, egtColor);
-
-    // Speed表示（DSEG7 36px）80以上で黄色、120以上で赤
-    formatOr(m_speedBuf, sizeof(m_speedBuf), v.hasSpeed, "%.0f", v.speedKmh);
-    uint32_t spdColor = color::kText;
-    if (v.speedKmh >= 120.0f) {
-        spdColor = 0xFF3333;  // 赤
-    } else if (v.speedKmh >= 80.0f) {
-        spdColor = 0xFFDD00;  // 黄色
-    }
-    m_speedNum.setText(m_speedBuf, spdColor);
-
-    // TPS表示（DSEG7）
-    formatOr(m_tpsBuf, sizeof(m_tpsBuf), v.hasTps, "%.0f", v.tpsPercent);
-    m_tpsNum.setText(m_tpsBuf, color::kText);
-
-    // CLT表示（DSEG7）60以下で青、100以上で黄色、105以上で赤で点滅
-    formatOr(m_cltBuf, sizeof(m_cltBuf), v.hasClt, "%.0f", v.cltC);
-    uint32_t cltColor = color::kText;
-    if (!v.hasClt) {
-        // 値なし: 白のまま（0 を「冷えている」の青にしない）
-    } else if (v.cltC >= 105.0f) {
-        // 点滅処理
-        if (m_blinkTimer % 1000 < 500) {
-            cltColor = 0xFF3333;  // 赤
-        } else {
-            cltColor = 0x000000;  // 黒（非表示のような）
+    // EGT表示（DSEG7 36px）200ms ごと更新
+    if (update200ms) {
+        formatOr(buf, sizeof(buf), v.hasEgt, "%.0f", v.egtC);
+        uint32_t egtColor = color::kText;
+        if (!v.hasEgt) {
+            // 値なし: 白のまま
+        } else if (v.egtC >= 500.0f) {
+            egtColor = 0xFF3333;  // 赤
+        } else if (v.egtC >= 400.0f) {
+            egtColor = 0xFFDD00;  // 黄色
         }
-    } else if (v.cltC >= 100.0f) {
-        cltColor = 0xFFDD00;  // 黄色
-    } else if (v.cltC <= 60.0f) {
-        cltColor = 0x33BBFF;  // 青
+        m_egtNum.setText(buf, egtColor);
     }
-    m_cltNum.setText(m_cltBuf, cltColor);
 
-    // OIL P表示（DSEG7、小数点1桁、kgf/cm2。ECU は kPa で送るので DisplayFilter で換算済み）
-    formatOr(m_oilPressureBuf, sizeof(m_oilPressureBuf), v.hasOilP, "%.1f", v.oilPressKgfCm2);
-    m_oilPNum.setText(m_oilPressureBuf, color::kText);
-
-    // OIL T表示（DSEG7）105以上で黄色、115以上で赤で点滅
-    formatOr(m_oilTempBuf, sizeof(m_oilTempBuf), v.hasOilT, "%.0f", v.oilTempC);
-    uint32_t oilTColor = color::kText;
-    if (v.oilTempC >= 115.0f) {
-        // 点滅処理
-        if (m_blinkTimer % 1000 < 500) {
-            oilTColor = 0xFF3333;  // 赤
-        } else {
-            oilTColor = 0x000000;  // 黒（非表示のような）
+    // Speed表示（DSEG7 36px）500ms ごと更新
+    if (update500ms) {
+        formatOr(m_speedBuf, sizeof(m_speedBuf), v.hasSpeed, "%.0f", v.speedKmh);
+        uint32_t spdColor = color::kText;
+        if (v.speedKmh >= 120.0f) {
+            spdColor = 0xFF3333;  // 赤
+        } else if (v.speedKmh >= 80.0f) {
+            spdColor = 0xFFDD00;  // 黄色
         }
-    } else if (v.oilTempC >= 105.0f) {
-        oilTColor = 0xFFDD00;  // 黄色
+        m_speedNum.setText(m_speedBuf, spdColor);
     }
-    m_oilTNum.setText(m_oilTempBuf, oilTColor);
 
-    // MAP表示（DSEG7）
-    formatOr(m_mapBuf, sizeof(m_mapBuf), v.hasMap, "%.0f", v.mapKpa);
-    m_mapNum.setText(m_mapBuf, color::kText);
-
-    // BARO表示（DSEG7 36px）
-    formatOr(m_baroBuf, sizeof(m_baroBuf), v.hasBaro, "%.0f", v.baroKpa);
-    m_baroNum.setText(m_baroBuf, color::kText);
-
-    // MAT表示（DSEG7）40以上で黄色、60以上で赤
-    formatOr(m_matBuf, sizeof(m_matBuf), v.hasMat, "%.0f", v.matC);
-    uint32_t matColor = color::kText;
-    if (v.matC >= 60.0f) {
-        matColor = 0xFF3333;  // 赤
-    } else if (v.matC >= 40.0f) {
-        matColor = 0xFFDD00;  // 黄色
+    // TPS表示（DSEG7）500ms ごと更新
+    if (update500ms) {
+        formatOr(m_tpsBuf, sizeof(m_tpsBuf), v.hasTps, "%.0f", v.tpsPercent);
+        m_tpsNum.setText(m_tpsBuf, color::kText);
     }
-    m_matNum.setText(m_matBuf, matColor);
 
-    // ISCV Duty表示（DSEG7）
-    formatOr(m_iscvDutyBuf, sizeof(m_iscvDutyBuf), v.hasIscv, "%.0f", v.iscvDuty);
-    m_iscvNum.setText(m_iscvDutyBuf, color::kText);
-
-    // vBatt表示（DSEG7、小数点1桁）12以下で黄色、11.5以下で赤で点滅
-    formatOr(m_vBattBuf, sizeof(m_vBattBuf), v.hasBatt, "%.1f", v.battVolt);
-    uint32_t vbColor = color::kText;
-    if (!v.hasBatt) {
-        // 値なし: 白のまま（0 V を「電圧低下」の赤点滅にしない）
-    } else if (v.battVolt <= 11.5f) {
-        // 点滅処理
-        if (m_blinkTimer % 1000 < 500) {
-            vbColor = 0xFF3333;  // 赤
-        } else {
-            vbColor = 0x000000;  // 黒（非表示のような）
+    // CLT表示（DSEG7）200ms ごと更新
+    if (update200ms) {
+        formatOr(m_cltBuf, sizeof(m_cltBuf), v.hasClt, "%.0f", v.cltC);
+        uint32_t cltColor = color::kText;
+        if (!v.hasClt) {
+            // 値なし: 白のまま（0 を「冷えている」の青にしない）
+        } else if (v.cltC >= 105.0f) {
+            // 点滅処理
+            if (m_blinkTimer % 1000 < 500) {
+                cltColor = 0xFF3333;  // 赤
+            } else {
+                cltColor = 0x000000;  // 黒（非表示のような）
+            }
+        } else if (v.cltC >= 100.0f) {
+            cltColor = 0xFFDD00;  // 黄色
+        } else if (v.cltC <= 60.0f) {
+            cltColor = 0x33BBFF;  // 青
         }
-    } else if (v.battVolt <= 12.0f) {
-        vbColor = 0xFFDD00;  // 黄色
+        m_cltNum.setText(m_cltBuf, cltColor);
     }
-    m_vBattNum.setText(m_vBattBuf, vbColor);
 
-    // PW（インジェクターパルス幅）表示（DSEG7、小数点以下1桁）
+    // OIL P表示（DSEG7、小数点1桁）500ms ごと更新
+    if (update500ms) {
+        formatOr(m_oilPressureBuf, sizeof(m_oilPressureBuf), v.hasOilP, "%.1f", v.oilPressKgfCm2);
+        m_oilPNum.setText(m_oilPressureBuf, color::kText);
+    }
+
+    // OIL T表示（DSEG7）200ms ごと更新
+    if (update200ms) {
+        formatOr(m_oilTempBuf, sizeof(m_oilTempBuf), v.hasOilT, "%.0f", v.oilTempC);
+        uint32_t oilTColor = color::kText;
+        if (v.oilTempC >= 115.0f) {
+            // 点滅処理
+            if (m_blinkTimer % 1000 < 500) {
+                oilTColor = 0xFF3333;  // 赤
+            } else {
+                oilTColor = 0x000000;  // 黒（非表示のような）
+            }
+        } else if (v.oilTempC >= 105.0f) {
+            oilTColor = 0xFFDD00;  // 黄色
+        }
+        m_oilTNum.setText(m_oilTempBuf, oilTColor);
+    }
+
+    // MAP表示（DSEG7）500ms ごと更新
+    if (update500ms) {
+        formatOr(m_mapBuf, sizeof(m_mapBuf), v.hasMap, "%.0f", v.mapKpa);
+        m_mapNum.setText(m_mapBuf, color::kText);
+    }
+
+    // BARO表示（DSEG7 36px）500ms ごと更新
+    if (update500ms) {
+        formatOr(m_baroBuf, sizeof(m_baroBuf), v.hasBaro, "%.0f", v.baroKpa);
+        m_baroNum.setText(m_baroBuf, color::kText);
+    }
+
+    // MAT表示（DSEG7）200ms ごと更新
+    if (update200ms) {
+        formatOr(m_matBuf, sizeof(m_matBuf), v.hasMat, "%.0f", v.matC);
+        uint32_t matColor = color::kText;
+        if (v.matC >= 60.0f) {
+            matColor = 0xFF3333;  // 赤
+        } else if (v.matC >= 40.0f) {
+            matColor = 0xFFDD00;  // 黄色
+        }
+        m_matNum.setText(m_matBuf, matColor);
+    }
+
+    // ISCV Duty表示（DSEG7）500ms ごと更新
+    if (update500ms) {
+        formatOr(m_iscvDutyBuf, sizeof(m_iscvDutyBuf), v.hasIscv, "%.0f", v.iscvDuty);
+        m_iscvNum.setText(m_iscvDutyBuf, color::kText);
+    }
+
+    // vBatt表示（DSEG7、小数点1桁）200ms ごと更新
+    if (update200ms) {
+        formatOr(m_vBattBuf, sizeof(m_vBattBuf), v.hasBatt, "%.1f", v.battVolt);
+        uint32_t vbColor = color::kText;
+        if (!v.hasBatt) {
+            // 値なし: 白のまま（0 V を「電圧低下」の赤点滅にしない）
+        } else if (v.battVolt <= 11.5f) {
+            // 点滅処理
+            if (m_blinkTimer % 1000 < 500) {
+                vbColor = 0xFF3333;  // 赤
+            } else {
+                vbColor = 0x000000;  // 黒（非表示のような）
+            }
+        } else if (v.battVolt <= 12.0f) {
+            vbColor = 0xFFDD00;  // 黄色
+        }
+        m_vBattNum.setText(m_vBattBuf, vbColor);
+    }
+
+    // PW（インジェクターパルス幅）表示（DSEG7、小数点以下1桁）500ms ごと更新
     // 注：色はINJ duty に基づいて変更（80以上で黄色、95以上で赤）
-    formatOr(m_pwBuf, sizeof(m_pwBuf), v.hasPw, "%.1f", v.pulseWidth);
-    // INJ duty を snap から取得
-    float injDuty = 0.0f;
-    snap.get(SignalId::InjDuty, injDuty);
-    uint32_t pwColor = color::kText;
-    if (injDuty >= 95.0f) {
-        pwColor = 0xFF3333;  // 赤
-    } else if (injDuty >= 80.0f) {
-        pwColor = 0xFFDD00;  // 黄色
+    if (update500ms) {
+        formatOr(m_pwBuf, sizeof(m_pwBuf), v.hasPw, "%.1f", v.pulseWidth);
+        // INJ duty を snap から取得
+        float injDuty = 0.0f;
+        snap.get(SignalId::InjDuty, injDuty);
+        uint32_t pwColor = color::kText;
+        if (injDuty >= 95.0f) {
+            pwColor = 0xFF3333;  // 赤
+        } else if (injDuty >= 80.0f) {
+            pwColor = 0xFFDD00;  // 黄色
+        }
+        m_pwNum.setText(m_pwBuf, pwColor);
     }
-    m_pwNum.setText(m_pwBuf, pwColor);
 
-    // ADV（点火進角）表示（DSEG7）
-    formatOr(m_advBuf, sizeof(m_advBuf), v.hasAdv, "%.0f", v.advanceDeg);
-    m_advNum.setText(m_advBuf, color::kText);
+    // ADV（点火進角）表示（DSEG7）500ms ごと更新
+    if (update500ms) {
+        formatOr(m_advBuf, sizeof(m_advBuf), v.hasAdv, "%.0f", v.advanceDeg);
+        m_advNum.setText(m_advBuf, color::kText);
+    }
 
     // === ラベルと値の色変更ロジック ===
-    // EGT: 400以上で黄色、500以上で赤
-    if (v.egtC >= 500.0f) {
-        lv_obj_set_style_text_color(m_cltTitle, lv_color_hex(0xFF3333), 0);  // 赤
-    } else if (v.egtC >= 400.0f) {
-        lv_obj_set_style_text_color(m_cltTitle, lv_color_hex(0xFFDD00), 0);  // 黄色
-    } else {
-        lv_obj_set_style_text_color(m_cltTitle, lv_color_hex(color::kDialSmall), 0);  // デフォルト
-    }
-
-    // SPD: 80以上で黄色、120以上で赤
-    if (v.speedKmh >= 120.0f) {
-        lv_obj_set_style_text_color(m_spdTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
-    } else if (v.speedKmh >= 80.0f) {
-        lv_obj_set_style_text_color(m_spdTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
-    } else {
-        lv_obj_set_style_text_color(m_spdTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
-    }
-
-    // CLT: 60以下で青、100以上で黄色、105以上で赤で点滅
-    if (!v.hasClt) {
-        lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
-    } else if (v.cltC >= 105.0f) {
-        // 点滅処理
-        if (m_blinkTimer % 1000 < 500) {
-            lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
+    // EGT: 400以上で黄色、500以上で赤（200ms ごと）
+    if (update200ms) {
+        if (v.egtC >= 500.0f) {
+            lv_obj_set_style_text_color(m_cltTitle, lv_color_hex(0xFF3333), 0);  // 赤
+        } else if (v.egtC >= 400.0f) {
+            lv_obj_set_style_text_color(m_cltTitle, lv_color_hex(0xFFDD00), 0);  // 黄色
         } else {
-            lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(0x000000), 0);  // 黒（非表示のような）
+            lv_obj_set_style_text_color(m_cltTitle, lv_color_hex(color::kDialSmall), 0);  // デフォルト
         }
-    } else if (v.cltC >= 100.0f) {
-        lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
-    } else if (v.cltC <= 60.0f) {
-        lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(0x33BBFF), 0);  // 青
-    } else {
-        lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
     }
 
-    // MAT: 40以上で黄色、60以上で赤
-    if (v.matC >= 60.0f) {
-        lv_obj_set_style_text_color(m_matTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
-    } else if (v.matC >= 40.0f) {
-        lv_obj_set_style_text_color(m_matTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
-    } else {
-        lv_obj_set_style_text_color(m_matTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
-    }
-
-    // VB: 12以下で黄色、11.5以下で赤で点滅
-    if (!v.hasBatt) {
-        lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
-    } else if (v.battVolt <= 11.5f) {
-        // 点滅処理
-        if (m_blinkTimer % 1000 < 500) {
-            lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
+    // SPD: 80以上で黄色、120以上で赤（500ms ごと）
+    if (update500ms) {
+        if (v.speedKmh >= 120.0f) {
+            lv_obj_set_style_text_color(m_spdTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
+        } else if (v.speedKmh >= 80.0f) {
+            lv_obj_set_style_text_color(m_spdTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
         } else {
-            lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(0x000000), 0);  // 黒（非表示のような）
+            lv_obj_set_style_text_color(m_spdTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
         }
-    } else if (v.battVolt <= 12.0f) {
-        lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
-    } else {
-        lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
     }
 
-    // OIL_T: 105以上で黄色、115以上で赤で点滅
-    if (v.oilTempC >= 115.0f) {
-        // 点滅処理
-        if (m_blinkTimer % 1000 < 500) {
-            lv_obj_set_style_text_color(m_oilTTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
+    // CLT: 60以下で青、100以上で黄色、105以上で赤で点滅（200ms ごと）
+    if (update200ms) {
+        if (!v.hasClt) {
+            lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
+        } else if (v.cltC >= 105.0f) {
+            // 点滅処理
+            if (m_blinkTimer % 1000 < 500) {
+                lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
+            } else {
+                lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(0x000000), 0);  // 黒（非表示のような）
+            }
+        } else if (v.cltC >= 100.0f) {
+            lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
+        } else if (v.cltC <= 60.0f) {
+            lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(0x33BBFF), 0);  // 青
         } else {
-            lv_obj_set_style_text_color(m_oilTTitleLabel, lv_color_hex(0x000000), 0);  // 黒（非表示のような）
+            lv_obj_set_style_text_color(m_cltTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
         }
-    } else if (v.oilTempC >= 105.0f) {
-        lv_obj_set_style_text_color(m_oilTTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
-    } else {
-        lv_obj_set_style_text_color(m_oilTTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
     }
 
-    // PW（INJ duty）: 80以上で黄色、95以上で赤
-    if (injDuty >= 95.0f) {
-        lv_obj_set_style_text_color(m_pwTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
-    } else if (injDuty >= 80.0f) {
-        lv_obj_set_style_text_color(m_pwTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
-    } else {
-        lv_obj_set_style_text_color(m_pwTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
+    // MAT: 40以上で黄色、60以上で赤（200ms ごと）
+    if (update200ms) {
+        if (v.matC >= 60.0f) {
+            lv_obj_set_style_text_color(m_matTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
+        } else if (v.matC >= 40.0f) {
+            lv_obj_set_style_text_color(m_matTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
+        } else {
+            lv_obj_set_style_text_color(m_matTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
+        }
+    }
+
+    // VB: 12以下で黄色、11.5以下で赤で点滅（200ms ごと）
+    if (update200ms) {
+        if (!v.hasBatt) {
+            lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
+        } else if (v.battVolt <= 11.5f) {
+            // 点滅処理
+            if (m_blinkTimer % 1000 < 500) {
+                lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
+            } else {
+                lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(0x000000), 0);  // 黒（非表示のような）
+            }
+        } else if (v.battVolt <= 12.0f) {
+            lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
+        } else {
+            lv_obj_set_style_text_color(m_vBattTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
+        }
+    }
+
+    // OIL_T: 105以上で黄色、115以上で赤で点滅（200ms ごと）
+    if (update200ms) {
+        if (v.oilTempC >= 115.0f) {
+            // 点滅処理
+            if (m_blinkTimer % 1000 < 500) {
+                lv_obj_set_style_text_color(m_oilTTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
+            } else {
+                lv_obj_set_style_text_color(m_oilTTitleLabel, lv_color_hex(0x000000), 0);  // 黒（非表示のような）
+            }
+        } else if (v.oilTempC >= 105.0f) {
+            lv_obj_set_style_text_color(m_oilTTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
+        } else {
+            lv_obj_set_style_text_color(m_oilTTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
+        }
+    }
+
+    // PW（INJ duty）: 80以上で黄色、95以上で赤（500ms ごと）
+    if (update500ms) {
+        float injDuty = 0.0f;
+        snap.get(SignalId::InjDuty, injDuty);
+        if (injDuty >= 95.0f) {
+            lv_obj_set_style_text_color(m_pwTitleLabel, lv_color_hex(0xFF3333), 0);  // 赤
+        } else if (injDuty >= 80.0f) {
+            lv_obj_set_style_text_color(m_pwTitleLabel, lv_color_hex(0xFFDD00), 0);  // 黄色
+        } else {
+            lv_obj_set_style_text_color(m_pwTitleLabel, lv_color_hex(color::kDialSmall), 0);  // デフォルト
+        }
     }
 
     // rusEFI点滅ロジック（CLT>110 または OIL-T>115）
