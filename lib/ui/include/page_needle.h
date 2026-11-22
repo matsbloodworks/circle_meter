@@ -16,7 +16,7 @@ public:
     void onShow() override;
     void onHide() override;
     void onUpdate(const Snapshot& snap, const Config& cfg) override;
-    bool onEvent(InputEvent) override { return false; }
+    bool onEvent(InputEvent ev) override;
     void setDiagText(const char* text) override;
 
 private:

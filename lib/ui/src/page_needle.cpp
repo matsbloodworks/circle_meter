@@ -8,6 +8,9 @@
 #include "page_common.h"
 #include "theme.h"
 
+// ページ切り替え用の外部関数（main_lcd21.cpp で定義）
+extern void toggleDisplayPage();
+
 namespace cm::ui {
 
 namespace {
@@ -119,6 +122,14 @@ void PageNeedle::onUpdate(const Snapshot& snap, const Config& cfg) {
         lv_obj_set_style_text_color(m_status, lv_color_hex(stHex), 0);
     }
     setLabel(m_status, m_lastStatus, sizeof(m_lastStatus), st);
+}
+
+bool PageNeedle::onEvent(InputEvent ev) {
+    if (ev == InputEvent::Tap) {
+        toggleDisplayPage();
+        return true;  // イベントを消費した
+    }
+    return false;
 }
 
 }  // namespace cm::ui

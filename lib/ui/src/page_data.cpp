@@ -8,6 +8,9 @@
 #include "page_common.h"
 #include "theme.h"
 
+// ページ切り替え用の外部関数（main_lcd21.cpp で定義）
+extern void toggleDisplayPage();
+
 namespace cm::ui {
 
 namespace {
@@ -480,6 +483,14 @@ void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {
         m_blinkTimer = 0;
         m_blinkState = true;
     }
+}
+
+bool PageData::onEvent(InputEvent ev) {
+    if (ev == InputEvent::Tap) {
+        toggleDisplayPage();
+        return true;  // イベントを消費した
+    }
+    return false;
 }
 
 }  // namespace cm::ui

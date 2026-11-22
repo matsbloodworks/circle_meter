@@ -16,6 +16,7 @@
 #include "config.h"
 #include "display_hal.h"
 #include "display_policy.h"
+#include "input_event.h"
 #include "lambda_sensor_state.h"
 #include "lvgl_port.h"
 #include "page_data.h"
@@ -41,6 +42,9 @@ using namespace cm;
 // LVGL の描画は loopTask（Core 1）で行う。arc のマスク処理でスタックを使うので既定の 8 KB より増やす
 SET_LOOP_TASK_STACK_SIZE(16 * 1024);
 
+// ページ管理（M面とC面の切り替え）
+enum class DisplayPage { M_Face = 0, C_Face = 1 };
+
 namespace {
 
 Config g_cfg;
@@ -52,6 +56,8 @@ ui::PageLambda g_lambda;  // SYS-21 (a) リング（AEM 風）
 ui::PageNeedle g_needle;  // SYS-21 (b) 指針式 A（大森風）
 ui::PageData g_data;      // データページ（新デザイン）
 ui::IPage* g_active = nullptr;
+
+DisplayPage g_currentPage = DisplayPage::M_Face;
 
 /// SYS-21: 設定の表示デザインに対応するページ。両方とも起動時に作ってあり、切替は表示/非表示だけ（規則 5）
 ui::IPage* pageForStyle(uint8_t style) {
@@ -68,6 +74,23 @@ void activatePage(uint8_t style) {
     g_active->onShow();
     g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
 }
+
+}  // namespace
+
+// M面とC面の切り替え（外部から呼び出し可能）
+void toggleDisplayPage() {
+    g_currentPage = (g_currentPage == DisplayPage::M_Face) ? DisplayPage::C_Face : DisplayPage::M_Face;
+
+    if (g_active != nullptr) {
+        g_active->onHide();
+    }
+
+    g_active = (g_currentPage == DisplayPage::M_Face) ? static_cast<ui::IPage*>(&g_data) : static_cast<ui::IPage*>(&g_needle);
+    g_active->onShow();
+    g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
+}
+
+namespace {
 
 #ifndef CM_ENABLE_CAN_SIM
 CanDriver g_can;
@@ -226,6 +249,11 @@ void handleDebugKeys() {
                 g_active->onShow();
                 g_active->onUpdate(g_store.snapshot(millis()), g_cfg);
                 Serial.printf("page: C面 (%s)\n", g_active->id());
+            }
+        } else if (c == 't') {
+            // タップでページ切り替え
+            if (g_active != nullptr) {
+                g_active->onEvent(InputEvent::Tap);
             }
         } else if (c == 'm') {
             // M面（新しいバーグラフ）への切り替え
