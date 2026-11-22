@@ -192,7 +192,7 @@ python tools/bench_check.py --listen --seconds 30
 | `IT-16` | **表示の安定性**（`RSK-14`） | `bench_check.py --mode burst` を流しながら、設定変更で NVS へ書き込む。画面を UVC カメラで連続撮影して確認する | NVS 書き込み中・CAN 受信中に画面の乱れ（ちらつき・ずれ・ノイズ）が出ない `RSK-14`, `OPN-12`（**2026-10-02**: 素の描画 + NVS では乱れなし。**LVGL 構成 + CAN 受信での実施は未了**） |
 | `IT-17` | **λ センサの状態表示** | `pcan_send.py --mode wbo-warmup`: ECU は λ = 0・ヒータ許可 OFF（3 秒）-> ON、WBO は Preheat -> Warmup（温度 25 -> 760 °C）-> Running、そのあと λ を有効にする。`--mode wbo-fault` で加熱中に `SensorDidntHeat`。シリアルの状態と画面（UVC カメラ）を確認 | `SENSOR OFF` -> `WARMING UP xxx°C` -> 通常表示の順に切り替わり、`NO SIGNAL` が出ない。故障で `SENSOR FAULT: NO HEAT` | `SYS-22`, `SWR-29`, `SWR-51` |
 | `IT-18` | **M5Dial 版**（`SWR-68`） | `m5dial` を書き込み、`pcan_send.py --mode drive` / `--mode wbo-warmup` を流して `python tools/meter_log.py --board m5dial` | 起動ログ（`i` で出し直し）が LCD-2.1 版と同じ形式で読めること。WBO の λ を受信して表示すること。センサ状態が OFF -> WARMUP -> CHECK -> OK と出ること。ユーザー設定（色・閾値・CAN）と起動ロゴが反映されること |
-| `IT-19` | **Link G4X 版**（`SYS-63`） | `USER_ECU_TYPE` を Link にして書き込み、PCLink で Channel 1 の Stream 1 送信を有効にする。回転数・水温・λ・電圧が PCLink の表示と一致すること。Channel を OFF にすると 2 秒で `NO SIGNAL` になること。EGT など追加フレームの値は追加前は `--` | 車両（作者の Link G4X） |
+| `IT-19` | **Link G4X 版**（`SYS-63`） | `USER_ECU_TYPE` を Link にして書き込み、PCLink で Channel 1 の Stream 1 送信を有効にする。回転数・水温・λ・電圧が PCLink の表示と一致すること。Channel を OFF にすると 2 秒で `NO SIGNAL` になること。EGT など追加フレームの値は追加前は `--` | Link G4X の車両（@junna6ce） |
 | `IT-14` | LVGL 初期化 | 起動 | **480x480** 全域が正しく描画される（色・向き・鏡像なし）。LVGL の描画バッファが内蔵 SRAM、フレームバッファが PSRAM に確保されている（起動ログで確認） | `SWR-40`,`SWR-41`, `DEC-05` |
 
 ## 4. 適格性確認テスト (`QT-*`) — リリース必須ゲート
