@@ -37,6 +37,14 @@ enum class SignalId : uint8_t {
     WboTempC,      ///< rusEFI WBO のセンサ温度 [°C]
     WboStatus,     ///< rusEFI WBO の状態（rusefi::WboStatus の値）
     WboLambda,     ///< rusEFI WBO の λ。表示に使う（SYS-03 / DEC-11）。Valid = 1 かつ有効範囲のときだけ更新
+    // ECU の Lua が BASE+12 で送る追加データ（rusefi_can_spec.h の kOffUserExtra）。M5Dial の複数ページ用
+    IdlePosition,    ///< ISCV（アイドル制御弁）のデューティ [%]
+    Baro,            ///< 大気圧 [kPa]
+    DwellMs,         ///< 点火コイルの通電時間 [ms]
+    FuelEcoInstant,  ///< 瞬間燃費 [km/L]
+    FuelEcoAvg,      ///< 平均燃費 [km/L]
+    InjPulseMs,      ///< 燃料噴射のパルス幅 [ms]（BASE+5 Fueling の fuel_pulse）
+    InjTiming,       ///< 燃料噴射のタイミング [deg]（BASE+13。ECU の Lua が送る）
     COUNT
 };
 
