@@ -53,6 +53,7 @@
       "PowerShell(git branch --show-current)",
       "PowerShell(git --version)",
       "PowerShell(python --version)",
+      "PowerShell(python -m platformio run -e lcd21_sim -t upload --upload-port COM4)",
       "Edit(.claude/**)",
       "Write(.claude/**)",
       "PowerShell(*)"
