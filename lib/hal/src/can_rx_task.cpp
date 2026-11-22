@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "link_decoder.h"
 #include "rusefi_decoder.h"
 
 namespace cm {
@@ -14,6 +15,7 @@ struct RxContext {
     const Config* cfg;
 };
 RxContext g_rx;
+link::LinkDecoder g_link;  // SWR-103: 車速のために車輪速度を持つ。このタスクだけが使う
 CanDriver* g_healthCan = nullptr;
 
 void canRxTask(void*) {
@@ -23,8 +25,16 @@ void canRxTask(void*) {
             continue;
         }
         const uint32_t now = millis();
-        auto r = rusefi::decodeFrame(msg.identifier, msg.data, msg.data_length_code, g_rx.cfg->canBaseId);
-        if (!r.accepted && !msg.extd) {
+        rusefi::DecodeResult r;
+        if (g_rx.cfg->ecuType == static_cast<uint8_t>(EcuType::Link)) {
+            // SWR-104: Link のときは rusEFI のデコーダを呼ばない（ID が重なっても誤読しない）
+            if (!msg.extd) {
+                r = g_link.decode(msg.identifier, msg.data, msg.data_length_code, g_rx.cfg->linkCanId);
+            }
+        } else {
+            r = rusefi::decodeFrame(msg.identifier, msg.data, msg.data_length_code, g_rx.cfg->canBaseId);
+        }
+        if (!r.accepted && !msg.extd && g_rx.cfg->ecuType != static_cast<uint8_t>(EcuType::Link)) {
             // SWR-11: rusEFI WBO が自分で送る状態・温度（標準 ID 0x190 / 0x191）
             r = rusefi::decodeWboFrame(msg.identifier, msg.data, msg.data_length_code);
         }

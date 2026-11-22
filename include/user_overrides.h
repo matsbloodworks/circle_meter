@@ -11,6 +11,10 @@
 #define USER_DIAL_RING     0
 #define USER_DIAL_NEEDLE_A 1
 
+// USER_ECU_TYPE に書く値（SWR-104）。user_config.h より先に定義しておく
+#define USER_ECU_RUSEFI 0
+#define USER_ECU_LINK   1
+
 #if __has_include("user_config.h")
 #include "user_config.h"
 #define CM_HAS_USER_CONFIG 1
@@ -86,6 +90,15 @@ static_assert(USER_CAN_BITRATE_KBPS == 250 || USER_CAN_BITRATE_KBPS == 500 || US
 #ifdef USER_CAN_BASE_ID
 static_assert(USER_CAN_BASE_ID >= 0 && USER_CAN_BASE_ID <= 0x7F4,
               "USER_CAN_BASE_ID は 0x000〜0x7F4 で指定してください（rusEFI の既定は 0x200）");
+#endif
+
+#ifdef USER_ECU_TYPE
+static_assert(USER_ECU_TYPE == USER_ECU_RUSEFI || USER_ECU_TYPE == USER_ECU_LINK,
+              "USER_ECU_TYPE は USER_ECU_RUSEFI か USER_ECU_LINK で指定してください");
+#endif
+#ifdef USER_LINK_CAN_ID
+static_assert(USER_LINK_CAN_ID >= 0 && USER_LINK_CAN_ID <= 0x7FF,
+              "USER_LINK_CAN_ID は 0〜2047 で指定してください（PCLink の既定は 1000）");
 #endif
 
 // 色は 0xRRGGBB。theme.h が USER_COLOR_* を読む（DOC-23 §8.1）
@@ -190,6 +203,12 @@ inline UserConfig userConfigFromBuild() {
 #endif
 #ifdef USER_CAN_BASE_ID
     u.canBaseId = {true, static_cast<uint16_t>(USER_CAN_BASE_ID)};
+#endif
+#ifdef USER_ECU_TYPE
+    u.ecuType = {true, static_cast<uint8_t>(USER_ECU_TYPE)};
+#endif
+#ifdef USER_LINK_CAN_ID
+    u.linkCanId = {true, static_cast<uint16_t>(USER_LINK_CAN_ID)};
 #endif
     return u;
 }

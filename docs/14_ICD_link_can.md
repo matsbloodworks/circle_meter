@@ -109,7 +109,7 @@ Width は 16、Byte Order は LS First、Type は Unsigned（Frame 1–14 と同
 
 ### 4.1 λ
 
-- λ = 生値 ÷ 1000。`0.30 ≤ λ ≤ 6.5` のときだけ有効（`SYS-42`。rusEFI のときと同じ範囲）。
+- λ = 生値 ÷ 1000。`0.30 ≤ λ ≤ 5.00` のときだけ有効（`SYS-42`。rusEFI のときと同じ範囲）。
 - 有効なら `WboLambda` に入れ、`WboValid` = 1。無効なら `WboLambda` は入れず `WboValid` = 0。
   λ の表示は rusEFI のときと同じく `WboLambda` を使う（`SYS-03` の表示経路をそのまま使う）。
 - Link はセンサの状態（加熱中・故障）と温度を Generic Dash で送らない。このため **λ が無効なときの理由は出せず、

@@ -60,6 +60,9 @@ UserConfigResult applyUserConfig(Config& cfg, const UserConfig& u) {
                [&](Config& c) { put(c.canBitrateKbps, u.canBitrateKbps); });
     applyGroup(cfg, r, UserGroup::CanBaseId, u.canBaseId.set,
                [&](Config& c) { put(c.canBaseId, u.canBaseId); });
+    applyGroup(cfg, r, UserGroup::EcuType, u.ecuType.set, [&](Config& c) { put(c.ecuType, u.ecuType); });
+    applyGroup(cfg, r, UserGroup::LinkCanId, u.linkCanId.set,
+               [&](Config& c) { put(c.linkCanId, u.linkCanId); });
 
     cfg.crc32 = computeCrc(cfg);
     return r;
@@ -83,6 +86,10 @@ const char* userGroupName(UserGroup g) {
             return "can_bitrate";
         case UserGroup::CanBaseId:
             return "can_base_id";
+        case UserGroup::EcuType:
+            return "ecu_type";
+        case UserGroup::LinkCanId:
+            return "link_can_id";
         default:
             return "?";
     }

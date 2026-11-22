@@ -10,10 +10,13 @@ namespace cm {
 
 /// 構造体レイアウトを変えたら必ずインクリメントすること。
 /// 不一致の保存データは既定値で上書きされる（SWR-81）。
-constexpr uint16_t kConfigVersion = 2;  // 2: dialStyle を追加（2026-10-04）
+constexpr uint16_t kConfigVersion = 3;  // 2: dialStyle を追加（2026-10-04）/ 3: ecuType・linkCanId（2026-11-22）
 
 /// SYS-21: λ ページの表示デザイン。値を変えない（NVS に保存される）。追加は Count の直前へ。
 enum class DialStyle : uint8_t { Ring = 0, NeedleA = 1, Count };
+
+/// SYS-63 / SWR-104: 受信する ECU の種類。値を変えない。追加は Count の直前へ。
+enum class EcuType : uint8_t { Rusefi = 0, Link = 1, Count };
 
 struct Config {
     uint16_t version = kConfigVersion;
@@ -36,6 +39,8 @@ struct Config {
     uint16_t canBaseId      = 0x200;  ///< SYS-02
     uint16_t canBitrateKbps = 500;    ///< 250 / 500 / 1000
     bool canExtendedId      = false;  ///< rusefiVerbose29b
+    uint8_t ecuType         = static_cast<uint8_t>(EcuType::Rusefi);  ///< SWR-104
+    uint16_t linkCanId      = 1000;   ///< SWR-104: Link G4X の Generic Dash の ID（DOC-14 §1）
 
     uint32_t crc32 = 0;  ///< 上記全フィールドのチェックサム（本フィールドは対象外）
 };

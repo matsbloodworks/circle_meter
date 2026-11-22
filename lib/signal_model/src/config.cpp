@@ -74,6 +74,8 @@ uint32_t computeCrc(const Config& c) {
     a.add(c.canBaseId);
     a.add(c.canBitrateKbps);
     a.add(c.canExtendedId);
+    a.add(c.ecuType);
+    a.add(c.linkCanId);
     return a.value();
 }
 
@@ -109,6 +111,11 @@ bool validate(const Config& c, bool checkCrc) {
     if (c.canBaseId > 0x7FF - 11 && !c.canExtendedId)
         return false;
     if (c.canBitrateKbps != 250 && c.canBitrateKbps != 500 && c.canBitrateKbps != 1000)
+        return false;
+
+    if (c.ecuType >= static_cast<uint8_t>(EcuType::Count))
+        return false;
+    if (c.linkCanId > 0x7FF)  // DOC-14 §1: 11 bit 標準 ID のみ
         return false;
 
     if (checkCrc && c.crc32 != computeCrc(c))
