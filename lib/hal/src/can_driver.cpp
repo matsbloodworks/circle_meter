@@ -35,6 +35,14 @@ twai_timing_config_t timingFor(uint16_t kbps) {
 }  // namespace
 
 void CanDriver::applyFilter(const Config& cfg, twai_filter_config_t& f) const {
+    if (cfg.ecuType == static_cast<uint8_t>(EcuType::Link)) {
+        // SWR-104: Link G4X の Generic Dash は 1 つの標準 ID だけ（DOC-14 §1）。
+        // single filter: ビット 31-21 = ID[10:0]、20 = RTR、19-0 = データ 1・2 バイト目 -> ID だけを比べる
+        f.acceptance_code = static_cast<uint32_t>(cfg.linkCanId & 0x7FFu) << 21;
+        f.acceptance_mask = 0x001FFFFFu;  // RTR とデータは don't care
+        f.single_filter   = true;
+        return;
+    }
     if (cfg.canExtendedId) {
         // 29bit の単一フィルタは範囲指定と相性が悪いため、ハードウェアでは絞らず
         // decodeFrame() 側の ID 判定に任せる（SYS-02 / DOC-12 §4）。

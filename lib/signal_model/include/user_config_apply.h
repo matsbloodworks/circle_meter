@@ -32,6 +32,8 @@ struct UserConfig {
     UserValue<uint16_t> egtDangerC;
     UserValue<uint16_t> canBitrateKbps;
     UserValue<uint16_t> canBaseId;
+    UserValue<uint8_t> ecuType;     ///< SWR-104
+    UserValue<uint16_t> linkCanId;  ///< SWR-104
 };
 
 /// 反映・却下の単位。ビット位置として使う
@@ -44,6 +46,8 @@ enum class UserGroup : uint8_t {
     Egt,
     CanBitrate,
     CanBaseId,
+    EcuType,
+    LinkCanId,
     Count
 };
 

@@ -27,7 +27,7 @@
 | `SWR-11` | rusEFI WBO の **StandardData（`0x190 + 2n`）と DiagData（`0x191 + 2n`）を受信・デコード**すること（n = 0）。StandardData からは Valid・**λ（byte2-3、uint16 LE × 0.0001。表示に使う）**・温度、DiagData からは状態を取り出す。Version が `0xA0` 以外、または DLC が 8 未満のフレームは捨てる。ハードウェアのアクセプタンスフィルタで `0x200`–`0x20F` に加えて `0x190`–`0x19F` を通す。スケーリングは `rusefi_can_spec.h` の定数のみを使う（`SWD-01`） | `SYS-22` | `UT-22`, `IT-17` |
 | `SWR-103` | Link G4X の Generic Dash 形式のフレームを `DOC-14` §3 のとおりデコードすること。ID が設定値（既定 1000）と一致し、DLC が 8、0 バイト目の番号が 0–15 のものだけを受理する。番号 14・15（`DOC-14 §3.1`）は本機が定義する追加フレームで、届くまでその値は入れない。車速は 4 つの車輪速度の最大値とする。スケーリングは `link_can_spec.h` の定数のみを使う | `SYS-63` | `UT-26` |
 | `SWR-104` | 受信する ECU の種類（rusEFI / Link）と Link の CAN ID を `user_config.h` の `USER_ECU_TYPE` / `USER_LINK_CAN_ID` で選べること。既定は rusEFI。Link のときはハードウェアのアクセプタンスフィルタでその ID だけを通し、rusEFI のデコーダは呼ばない | `SYS-63`,`SWR-67` | `UT-24`, `IT-19` |
-| `SWR-105` | Link の λ は `0.30 ≤ λ ≤ 6.5` のときだけ表示用の λ（`WboLambda`）に入れ、そのときの有効フラグ（`WboValid`）を 1、範囲外なら 0 とすること。λ の表示と `SWR-29` の判定は rusEFI のときと同じ経路を使う | `SYS-63`,`SYS-42` | `UT-26` |
+| `SWR-105` | Link の λ は `0.30 ≤ λ ≤ 5.00` のときだけ表示用の λ（`WboLambda`）に入れ、そのときの有効フラグ（`WboValid`）を 1、範囲外なら 0 とすること。λ の表示と `SWR-29` の判定は rusEFI のときと同じ経路を使う | `SYS-63`,`SYS-42` | `UT-26` |
 
 ## 2. 信号モデル・鮮度管理
 

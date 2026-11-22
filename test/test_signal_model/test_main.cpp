@@ -917,6 +917,8 @@ void test_UT24_valid_values_are_applied() {
     u.egtDangerC             = {true, 900};
     u.canBitrateKbps         = {true, 1000};
     u.canBaseId              = {true, 0x300};
+    u.ecuType                = {true, static_cast<uint8_t>(EcuType::Link)};  // SWR-104
+    u.linkCanId              = {true, 1001};
     const UserConfigResult r = applyUserConfig(cfg, u);
     TEST_ASSERT_EQUAL_UINT16(0, r.rejectedMask);
     TEST_ASSERT_FALSE(cfg.showAfr);
@@ -929,6 +931,8 @@ void test_UT24_valid_values_are_applied() {
     TEST_ASSERT_EQUAL_UINT16(900, cfg.egt.dangerC);
     TEST_ASSERT_EQUAL_UINT16(1000, cfg.canBitrateKbps);
     TEST_ASSERT_EQUAL_UINT16(0x300, cfg.canBaseId);
+    TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(EcuType::Link), cfg.ecuType);
+    TEST_ASSERT_EQUAL_UINT16(1001, cfg.linkCanId);
     for (uint8_t g = 0; g < static_cast<uint8_t>(UserGroup::Count); ++g) {
         TEST_ASSERT_TRUE(hasBit(r.appliedMask, static_cast<UserGroup>(g)));
     }
@@ -941,9 +945,14 @@ void test_UT24_out_of_range_group_keeps_default() {
     u.brightness             = {true, 9};      // 1-5 の外
     u.canBitrateKbps         = {true, 300};    // 250 / 500 / 1000 以外
     u.showAfr                = {true, false};  // これは正しい
+    u.ecuType                = {true, 7};      // SWR-104: 種類の外
+    u.linkCanId              = {true, 0x800};  // 11 bit の外
     const UserConfigResult r = applyUserConfig(cfg, u);
     TEST_ASSERT_TRUE(hasBit(r.rejectedMask, UserGroup::Brightness));
     TEST_ASSERT_TRUE(hasBit(r.rejectedMask, UserGroup::CanBitrate));
+    TEST_ASSERT_TRUE(hasBit(r.rejectedMask, UserGroup::EcuType));
+    TEST_ASSERT_TRUE(hasBit(r.rejectedMask, UserGroup::LinkCanId));
+    TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(EcuType::Rusefi), cfg.ecuType);
     TEST_ASSERT_TRUE(hasBit(r.appliedMask, UserGroup::ShowAfr));
     TEST_ASSERT_EQUAL_UINT8(defaultConfig().brightness, cfg.brightness);
     TEST_ASSERT_EQUAL_UINT16(defaultConfig().canBitrateKbps, cfg.canBitrateKbps);
