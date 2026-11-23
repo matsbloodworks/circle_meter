@@ -209,6 +209,10 @@ void PageData::onCreate(lv_obj_t* parent, const Config& cfg) {
     lv_obj_set_width(m_tripLabel, LV_SIZE_CONTENT);
     lv_label_set_text_static(m_odoLabel, m_lastOdo);
     lv_label_set_text_static(m_tripLabel, m_lastTrip);
+
+    // 下端の fps 表示（描画が重くなっていないかを画面で見るため。値はシリアルにも 1 秒ごとに出る）
+    m_diag = makeLabel(m_root, &cm_font_b612_small, color::kDialDiag, 200, layout::kCx, 450);
+    lv_label_set_text_static(m_diag, m_lastDiag);
     m_distGapPx = 2 * lv_text_get_width(" ", 1, &cm_font_b612_label, 0) - 5;
 
 
@@ -264,9 +268,7 @@ void PageData::setDistance(uint32_t odoM, uint32_t tripM) {
 }
 
 void PageData::setDiagText(const char* text) {
-    // M面には fps などの診断文字を出さない（描画の間隔を値ごとに変えたので、fps の数字は意味が薄い）。
-    // 計測値はシリアルに 1 秒ごとに出ている
-    (void)text;
+    setLabel(m_diag, m_lastDiag, sizeof(m_lastDiag), text != nullptr ? text : "");
 }
 
 void PageData::onUpdate(const Snapshot& snap, const Config& cfg) {

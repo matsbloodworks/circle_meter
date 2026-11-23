@@ -77,6 +77,8 @@ private:
     char m_baroBuf[16]{};
 
     DisplayFilter m_filter;
+    lv_obj_t* m_diag = nullptr;  ///< 下端の fps 表示（setDiagText）
+    char m_lastDiag[24]{};
 
     lv_obj_t* m_rusEfiLabel = nullptr;
     lv_obj_t* m_mbwLabel = nullptr;
